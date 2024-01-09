@@ -13,6 +13,7 @@
 // ---- END VEXCODE CONFIGURED DEVICES ----
 
 #include "vex.h"
+#include "objectDtection.h"
 
 using namespace vex;
 
@@ -28,6 +29,10 @@ motor rightMotorB = motor(PORT4, ratio18_1, true);
 motor_group RightDriveSmart = motor_group(rightMotorA, rightMotorB);
 drivetrain Drivetrain = drivetrain(LeftDriveSmart, RightDriveSmart, 319.19, 295, 40, mm, 1);
 controller Controller1 = controller(primary);
+distance frontDistance = distance(PORT19);
+brain::lcd screen = vex::brain::lcd();
+vision visionSensor = vision(PORT10);
+
 
 // VEXcode generated functions
 // define variable for remote controller enable/disable
@@ -80,6 +85,7 @@ void autonomous(void)
 
 void usercontrol(void)
 {
+  double dist = 100000;
   // User control code here, inside the loop
   while (1)
   {
@@ -102,16 +108,50 @@ void usercontrol(void)
     // the direction of the right motors. This is so that the robot turns for e.g right when
     // the joystick is pushed to right by rotating the righ wheels backwords and the
     // left wheels forwards.
+    
 
-    RightDriveSmart.spin(vex::directionType::fwd,
+    //screen.clearScreen();
+    dist = frontDistance.objectDistance(mm);
+    screen.print("Dist: %f", dist);
+    screen.newLine();
+
+    if(dist > 170){
+      RightDriveSmart.spin(vex::directionType::fwd,
                           Controller1.Axis2.position() - Controller1.Axis4.position(),
                           vex::velocityUnits::pct);
-    LeftDriveSmart.spin(vex::directionType::fwd,
+      LeftDriveSmart.spin(vex::directionType::fwd,
                          Controller1.Axis2.position() + Controller1.Axis4.position(),
                          vex::velocityUnits::pct);
+    }
+
+    else if(Controller1.Axis2.position() < 0) {
+      RightDriveSmart.spin(vex::directionType::fwd,
+                          Controller1.Axis2.position() - Controller1.Axis4.position(),
+                          vex::velocityUnits::pct);
+      LeftDriveSmart.spin(vex::directionType::fwd,
+                         Controller1.Axis2.position() + Controller1.Axis4.position(),
+                         vex::velocityUnits::pct);
+    }
+    else {
+      RightDriveSmart.stop(vex::brakeType::brake);
+      LeftDriveSmart.stop(vex::brakeType::brake);
+    }
+    
+    visionSensor.takeSnapshot(GREENTRIBALL);
+    if(visionSensor.largestObject.exists){
+      screen.print("Green Triball X: %d ", visionSensor.largestObject.centerX);
+      screen.print("Y: %d ", visionSensor.largestObject.centerY);
+      screen.print("W: %d ", visionSensor.largestObject.width);
+      screen.print("H %d ", visionSensor.largestObject.height);
+      screen.newLine();
+    }
+    
+    
 
     wait(20, msec); // Sleep the task for a short amount of time to
                     // prevent wasted resources.
+    screen.print("========================================");
+    screen.newLine();
   }
 }
 
