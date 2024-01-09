@@ -21,7 +21,7 @@ competition Competition;
 
 // define your global instances of motors and other devices here
 motor leftMotorA = motor(PORT1, ratio18_1, false);
-motor leftMotorB = motor(PORT2, ratio18_1, false);
+motor leftMotorB = motor(PORT11, ratio18_1, false);
 motor_group LeftDriveSmart = motor_group(leftMotorA, leftMotorB);
 motor rightMotorA = motor(PORT3, ratio18_1, true);
 motor rightMotorB = motor(PORT4, ratio18_1, true);
