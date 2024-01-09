@@ -2,9 +2,9 @@
 	"project": {
 		"name": "BigRobot",
 		"slot": 1,
-		"description": "Empty V5 C++ Project",
+		"description": "Code for the Big Robot",
 		"platform": "V5",
-		"creationDate": "Mon, 08 Jan 2024 09:34:24 GMT",
+		"creationDate": "Tue, 09 Jan 2024 12:08:32 GMT",
 		"language": "cpp",
 		"sdkVersion": "V5_20220726_10_00_00",
 		"cpp": {

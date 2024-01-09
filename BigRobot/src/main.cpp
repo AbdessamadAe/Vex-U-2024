@@ -23,7 +23,7 @@ competition Competition;
 motor leftMotorA = motor(PORT1, ratio18_1, false);
 motor leftMotorB = motor(PORT11, ratio18_1, false);
 motor_group LeftDriveSmart = motor_group(leftMotorA, leftMotorB);
-motor rightMotorA = motor(PORT3, ratio18_1, true);
+motor rightMotorA = motor(PORT12, ratio18_1, true);
 motor rightMotorB = motor(PORT4, ratio18_1, true);
 motor_group RightDriveSmart = motor_group(rightMotorA, rightMotorB);
 drivetrain Drivetrain = drivetrain(LeftDriveSmart, RightDriveSmart, 319.19, 295, 40, mm, 1);
