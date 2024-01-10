@@ -14,6 +14,7 @@
 
 #include "vex.h"
 #include "objectDtection.h"
+#include<ctime>
 
 using namespace vex;
 
@@ -32,6 +33,86 @@ controller Controller1 = controller(primary);
 distance frontDistance = distance(PORT19);
 brain::lcd screen = vex::brain::lcd();
 vision visionSensor = vision(PORT10);
+triport Threewireport = triport(PORT22);
+limit switch_sensor = limit(Threewireport.A);
+
+
+//custom global variables
+double dist = 100000;
+bool reverserControl = false;
+time_t controllerStartTimer = time(NULL);
+
+
+//custom functions
+
+//function to get the speed for the rotation of the motors depending on wether the controls are reversed or not
+//reversing the controls specifically the Axis2 is done by pressing R2
+//This can be usefull for easier control of the robots when its rotated 180 degrees
+float get_speed_direction(const char* side){
+  if(reverserControl){
+      if(strcmp(side, "right")){
+        return -(Controller1.Axis2.position() - Controller1.Axis4.position());
+      }
+      else if(strcmp(side, "left")){
+        return -(Controller1.Axis2.position() + Controller1.Axis4.position());
+      }
+  }
+  if(strcmp(side, "right")){
+      return Controller1.Axis2.position() + Controller1.Axis4.position();
+  }
+  else if(strcmp(side, "left")){
+      return Controller1.Axis2.position() - Controller1.Axis4.position();
+  }
+  else {
+    return 0;
+  }
+}
+
+//function to switch the controller flag after a 1 second cooldown
+void switch_control_direction(time_t *controllerStartTimer){
+  time_t currentTime = time(NULL);
+  if(difftime(currentTime, *controllerStartTimer) < 1){
+    return;
+  }
+  *controllerStartTimer = time(NULL);
+  
+  if(reverserControl){
+    reverserControl = false;
+  }
+  else {
+    reverserControl = true;
+  } 
+}
+
+//function for automatically stearing the robot toward a detected green triball 
+//given the visionSensor object that took the snapshot
+//It will also move the robot toward the triball until collision is detected with the front switch sensor
+//take into account the location of the camera and a margin error (optional)
+void auto_face_greentriball(vision visionSensor, int error_margin=50, int camera_x=158){
+    if(visionSensor.largestObject.exists){
+      int triball_x = visionSensor.largestObject.centerX;
+      if(triball_x <= (camera_x - error_margin)){
+        //turn left
+        RightDriveSmart.spin(vex::directionType::fwd, 25, pct);
+        LeftDriveSmart.spin(vex::directionType::rev, 25, pct);
+      }
+      else if (triball_x >= (camera_x + error_margin)) {
+        //turn right
+        RightDriveSmart.spin(vex::directionType::rev, 25, pct);
+        LeftDriveSmart.spin(vex::directionType::fwd, 25, pct);
+      }
+      else if(!switch_sensor.pressing()){
+        RightDriveSmart.spin(vex::directionType::fwd, 25, pct);
+        LeftDriveSmart.spin(vex::directionType::fwd, 25, pct);
+      }
+      else {
+        //break
+        RightDriveSmart.stop(vex::brakeType::brake);
+        LeftDriveSmart.stop(vex::brakeType::brake);
+      }
+    }
+    return;
+}
 
 
 // VEXcode generated functions
@@ -54,6 +135,8 @@ void pre_auton(void)
 
   // All activities that occur before the competition starts
   // Example: clearing encoders, setting servo positions, ...
+
+  return;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -85,7 +168,6 @@ void autonomous(void)
 
 void usercontrol(void)
 {
-  double dist = 100000;
   // User control code here, inside the loop
   while (1)
   {
@@ -108,28 +190,29 @@ void usercontrol(void)
     // the direction of the right motors. This is so that the robot turns for e.g right when
     // the joystick is pushed to right by rotating the righ wheels backwords and the
     // left wheels forwards.
+    dist = 100000;
+    if(frontDistance.isObjectDetected())
+    {
+      dist = frontDistance.objectDistance(mm);
+    }
     
+    screen.printAt(10, 10, "Dist: %f", dist);
 
-    //screen.clearScreen();
-    dist = frontDistance.objectDistance(mm);
-    screen.print("Dist: %f", dist);
-    screen.newLine();
-
-    if(dist > 170){
+    if(dist > 150){
       RightDriveSmart.spin(vex::directionType::fwd,
-                          Controller1.Axis2.position() - Controller1.Axis4.position(),
+                          get_speed_direction("right"),
                           vex::velocityUnits::pct);
       LeftDriveSmart.spin(vex::directionType::fwd,
-                         Controller1.Axis2.position() + Controller1.Axis4.position(),
+                         get_speed_direction("left"),
                          vex::velocityUnits::pct);
     }
 
     else if(Controller1.Axis2.position() < 0) {
       RightDriveSmart.spin(vex::directionType::fwd,
-                          Controller1.Axis2.position() - Controller1.Axis4.position(),
+                          get_speed_direction("right"),
                           vex::velocityUnits::pct);
       LeftDriveSmart.spin(vex::directionType::fwd,
-                         Controller1.Axis2.position() + Controller1.Axis4.position(),
+                         get_speed_direction("left"),
                          vex::velocityUnits::pct);
     }
     else {
@@ -139,19 +222,28 @@ void usercontrol(void)
     
     visionSensor.takeSnapshot(GREENTRIBALL);
     if(visionSensor.largestObject.exists){
-      screen.print("Green Triball X: %d ", visionSensor.largestObject.centerX);
-      screen.print("Y: %d ", visionSensor.largestObject.centerY);
-      screen.print("W: %d ", visionSensor.largestObject.width);
-      screen.print("H %d ", visionSensor.largestObject.height);
-      screen.newLine();
+      screen.printAt(10, 30, "Green Triball X: %d ", visionSensor.largestObject.centerX);
+      screen.printAt(230, 30, "Y: %d ", visionSensor.largestObject.centerY);
+      screen.printAt(310, 30, "W: %d ", visionSensor.largestObject.width);
+      screen.printAt(390, 30, "H %d ", visionSensor.largestObject.height);
     }
+
+
+
+    if(Controller1.ButtonR2.pressing()){
+      switch_control_direction(&controllerStartTimer);
+    }
+    screen.printAt(10, 60, "Reverse Control: %d", reverserControl);
+
+    auto_face_greentriball(visionSensor);
+  
     
     
 
     wait(20, msec); // Sleep the task for a short amount of time to
                     // prevent wasted resources.
-    screen.print("========================================");
-    screen.newLine();
+
+    
   }
 }
 
