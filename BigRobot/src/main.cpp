@@ -15,6 +15,7 @@
 #include "vex.h"
 #include "objectDtection.h"
 #include<ctime>
+#include<cmath>
 
 using namespace vex;
 
@@ -35,12 +36,17 @@ brain::lcd screen = vex::brain::lcd();
 vision visionSensor = vision(PORT10);
 triport Threewireport = triport(PORT22);
 limit switch_sensor = limit(Threewireport.A);
+inertial inertial_sensor = inertial(PORT16);
 
 
 //custom global variables
 double dist = 100000;
 bool reverserControl = false;
 time_t controllerStartTimer = time(NULL);
+
+
+//functions prototypes
+void face_angle_smooth(float target_angle=50.0, float acceptable_error=5);
 
 
 //custom functions
@@ -88,22 +94,25 @@ void switch_control_direction(time_t *controllerStartTimer){
 //given the visionSensor object that took the snapshot
 //It will also move the robot toward the triball until collision is detected with the front switch sensor
 //take into account the location of the camera and a margin error (optional)
-void auto_face_greentriball(vision visionSensor, int error_margin=50, int camera_x=158){
+void auto_face_greentriball(vision visionSensor, int error_margin=50, int camera_x = 158){
     if(visionSensor.largestObject.exists){
       int triball_x = visionSensor.largestObject.centerX;
       if(triball_x <= (camera_x - error_margin)){
         //turn left
-        RightDriveSmart.spin(vex::directionType::fwd, 25, pct);
-        LeftDriveSmart.spin(vex::directionType::rev, 25, pct);
+        float motor_speed = 25 * triball_x/camera_x;
+        RightDriveSmart.spin(vex::directionType::fwd, motor_speed, pct);
+        LeftDriveSmart.spin(vex::directionType::rev, motor_speed, pct);
       }
       else if (triball_x >= (camera_x + error_margin)) {
         //turn right
-        RightDriveSmart.spin(vex::directionType::rev, 25, pct);
-        LeftDriveSmart.spin(vex::directionType::fwd, 25, pct);
+        float motor_speed = 25 * (1- camera_x/triball_x);
+        RightDriveSmart.spin(vex::directionType::rev, motor_speed, pct);
+        LeftDriveSmart.spin(vex::directionType::fwd, motor_speed, pct);
       }
       else if(!switch_sensor.pressing()){
-        RightDriveSmart.spin(vex::directionType::fwd, 25, pct);
-        LeftDriveSmart.spin(vex::directionType::fwd, 25, pct);
+        
+        RightDriveSmart.spin(fwd, 25, pct);
+        LeftDriveSmart.spin(fwd, 25, pct);
       }
       else {
         //break
@@ -115,9 +124,51 @@ void auto_face_greentriball(vision visionSensor, int error_margin=50, int camera
 }
 
 
+void face_angle_smooth(float target_angle, float acceptable_error){
+  float current_angle = inertial_sensor.heading();
+  float error_angle = current_angle - target_angle;
+  float motor_speed;
+  while(std::abs(error_angle) > acceptable_error){
+    if(error_angle > 0){
+      if(error_angle <= 180){
+        //turn left
+        motor_speed = error_angle*0.5;
+      }
+      else {
+        //turn right
+        motor_speed = -(360-error_angle)*0.5;
+      }
+    }
+    else{
+      if(-error_angle <= 180){
+        //turn right
+        motor_speed = error_angle*0.5;
+      }
+      else {
+        motor_speed = (360 + error_angle)*0.5;
+      }
+
+    }
+
+    RightDriveSmart.spin(fwd, motor_speed, pct);
+    LeftDriveSmart.spin(fwd, -motor_speed, pct);
+
+    current_angle = inertial_sensor.heading();
+    error_angle = current_angle - target_angle;
+    screen.printAt(10, 180, "Turning smoothly ....");
+
+    //break the automated turning in case the robot stuck
+    if(Controller1.ButtonL1.pressing()){
+      return;
+    }
+    wait(20, msec);
+  }
+}
+
 // VEXcode generated functions
 // define variable for remote controller enable/disable
-bool RemoteControlCodeEnabled = true;
+bool RemoteControlCodeEnabled = false;
+
 /*---------------------------------------------------------------------------*/
 /*                          Pre-Autonomous Functions                         */
 /*                                                                           */
@@ -153,6 +204,13 @@ void autonomous(void)
 {
   // ..........................................................................
   // Insert autonomous user code here.
+  Drivetrain.setDriveVelocity(25, pct);
+  Drivetrain.setTurnVelocity(25, pct);
+  Drivetrain.driveFor(500, mm, true);
+  Drivetrain.turnFor(50, rotationUnits::deg);
+  
+  //drivetrain code to be tested
+  
   // ..........................................................................
 }
 
@@ -168,6 +226,12 @@ void autonomous(void)
 
 void usercontrol(void)
 {
+  LeftDriveSmart.setStopping(brakeType::coast);
+  RightDriveSmart.setStopping(brakeType::coast);
+  inertial_sensor.calibrate();
+  while(inertial_sensor.isCalibrating()){
+    wait(50, msec);
+  }
   // User control code here, inside the loop
   while (1)
   {
@@ -225,7 +289,7 @@ void usercontrol(void)
       screen.printAt(10, 30, "Green Triball X: %d ", visionSensor.largestObject.centerX);
       screen.printAt(230, 30, "Y: %d ", visionSensor.largestObject.centerY);
       screen.printAt(310, 30, "W: %d ", visionSensor.largestObject.width);
-      screen.printAt(390, 30, "H %d ", visionSensor.largestObject.height);
+      screen.printAt(370, 30, "H %d ", visionSensor.largestObject.height);
     }
 
 
@@ -235,8 +299,17 @@ void usercontrol(void)
     }
     screen.printAt(10, 60, "Reverse Control: %d", reverserControl);
 
-    auto_face_greentriball(visionSensor);
-  
+    if(Controller1.ButtonL2.pressing()){
+      auto_face_greentriball(visionSensor);
+    }
+    if(Controller1.ButtonL1.pressing()){
+        face_angle_smooth();
+    }
+    if(Controller1.ButtonR1.pressing()){
+      autonomous();
+    }
+    
+    screen.printAt(10,90, "Inertial Sensor heading: %f", inertial_sensor.heading(degrees));
     
     
 
