@@ -43,6 +43,14 @@ inertial inertial_sensor = inertial(PORT16);
 double dist = 100000;
 bool reverserControl = false;
 time_t controllerStartTimer = time(NULL);
+int current_motor_angle_left = 0;
+int current_motor_angle_right = 0;
+
+struct{
+  int X=0;
+  int Y=0;
+  float teta=0.0;
+}position;
 
 
 //functions prototypes
@@ -165,6 +173,28 @@ void face_angle_smooth(float target_angle, float acceptable_error){
   }
 }
 
+
+void update_location(){
+    //the distance between the front center and the right and left wheel
+    int rw = 125;
+
+    //get the distance travelled by the left and right wheel by getting the change in angle then to mm
+    float dr = (rightMotorA.position(deg) - current_motor_angle_right) * 203.2/360;
+    float dl = (leftMotorA.position(deg) - current_motor_angle_left) * 203.2/360;
+
+    //calculating the change in the orientation of the robot
+    float dteta = (dr - dl)/(2*rw);
+    //calulating the distance travelled by the entire robot
+    float d = (dl + dr)/2;
+
+    position.X += d * cos(dteta);
+    position.Y += d * sin(dteta);
+    position.teta += dteta;
+
+    screen.printAt(10, 180, "Dteta:%f D:%f dr:%f dl:%f", dteta, d, dr, dl);
+    screen.printAt(10, 210, "X:%d Y:%d teta:%f", position.X, position.Y, position.teta);
+}
+
 // VEXcode generated functions
 // define variable for remote controller enable/disable
 bool RemoteControlCodeEnabled = false;
@@ -232,6 +262,10 @@ void usercontrol(void)
   while(inertial_sensor.isCalibrating()){
     wait(50, msec);
   }
+
+  rightMotorA.setPosition(0, deg);
+  leftMotorA.setPosition(0, deg);
+
   // User control code here, inside the loop
   while (1)
   {
@@ -284,6 +318,14 @@ void usercontrol(void)
       LeftDriveSmart.stop(vex::brakeType::brake);
     }
     
+    update_location();
+
+    current_motor_angle_left = leftMotorA.position(deg);
+    current_motor_angle_right = rightMotorA.position(deg);
+    position.teta = inertial_sensor.heading() * 180/M_PI;
+
+
+    
     visionSensor.takeSnapshot(GREENTRIBALL);
     if(visionSensor.largestObject.exists){
       screen.printAt(10, 30, "Green Triball X: %d ", visionSensor.largestObject.centerX);
@@ -310,6 +352,8 @@ void usercontrol(void)
     }
     
     screen.printAt(10,90, "Inertial Sensor heading: %f", inertial_sensor.heading(degrees));
+
+    
     
     
 
