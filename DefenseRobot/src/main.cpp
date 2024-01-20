@@ -32,16 +32,17 @@ motor FlywheelB = motor(PORT8, ratio18_1, true);
 motor_group Flywheel = motor_group(FlywheelA, FlywheelB);
 motor Armmotor = motor(PORT9, ratio18_1, false);
 
-int ra = 0;
+int armUp = 0;
 
 /*---------------------------------------------------------------------------*/
 /*                                Flywheel Function                           */
 void flywheel(int speed)
 {
-  if(Armmotor.position() == 0){
+  if(armUp == 0){
     Armmotor.spinFor(directionType::fwd, 3 * 360, rotationUnits::deg);
-    Flywheel.spin(vex::directionType::rev, speed, vex::velocityUnits::pct);
+    armUp = 1;
   }
+  Flywheel.spin(vex::directionType::rev, speed, vex::velocityUnits::pct);
   
 
   Brain.Screen.clearScreen();
@@ -59,8 +60,9 @@ void flywheel(int speed)
 void Stopflywheel()
 {
   Flywheel.stop();
-  if(Armmotor.position() >= 360*2.98){
-    Armmotor.spinFor(directionType::fwd, -2.5 * 360, rotationUnits::deg);
+  if(armUp == 1){
+    Armmotor.spinFor(directionType::fwd, -3 * 360, rotationUnits::deg);
+    armUp = 0;
   }
   
   Armmotor.setBrake(brakeType::hold);
@@ -72,7 +74,7 @@ void Stopflywheel()
 int current_motor_angle_left = 0;
 int current_motor_angle_right = 0;
 float d = 0;
-float rw = 140;
+float rw = 385/2;
 float wheeldiam = 101.6;
 float dtheta = 0;
 int stop = 0;
@@ -97,7 +99,7 @@ void track_location()
   dtheta = (dr - dl) / (2 * rw);
   // calulating the distance travelled by the entire robot
 
-  if (std::abs(dtheta) <= 0.008)
+  if (std::abs(dtheta) <= 0.01)
   {
     d = (dr + dl) / 2;
   }
@@ -151,14 +153,16 @@ void moveToCoordinate(float targetX, float targetY)
     return;
   }
 
-  // Turn the robot to face the target
-  turnRobotToFace(angleToTurn);
+  
 
   // Calculate the distance to move
   float distance = sqrt(deltaX * deltaX + deltaY * deltaY);
 
   // Move the robot to the target
   moveRobotForward(distance);
+
+  // Turn the robot to face the target
+  turnRobotToFace(angleToTurn);
 
   // Update the position
   position.X = targetX;
@@ -206,13 +210,9 @@ void autonomous(void)
   rightMotorA.setPosition(0, deg);
   leftMotorA.setPosition(0, deg);
 
-  //track_location();
+  Brain.Screen.printAt(30, 30, "Auto Mode");
 
-  /* current_motor_angle_left = leftMotorA.position(deg);
-  current_motor_angle_right = rightMotorA.position(deg);
-    */
-  moveToCoordinate(1037, 393);
-  moveToCoordinate(10, 393);
+  moveToCoordinate(900, -300);
   stop = 1;
 }
 
@@ -243,8 +243,8 @@ void usercontrol(void)
     // ........................................................................
     // Insert user code here. This is where you use the joystick values to
     // update your motors, etc.
-    RightDriveSmart.spin(vex::directionType::fwd, -Controller2.Axis3.position() + Controller2.Axis4.position(), pct);
-    LeftDriveSmart.spin(vex::directionType::fwd, -Controller2.Axis3.position() - Controller2.Axis4.position(), pct);
+    RightDriveSmart.spin(vex::directionType::fwd, -Controller2.Axis2.position() + Controller2.Axis4.position(), pct);
+    LeftDriveSmart.spin(vex::directionType::fwd, -Controller2.Axis2.position() - Controller2.Axis4.position(), pct);
     // ........................................................................
 
     // Testing autonomous functions
@@ -254,15 +254,24 @@ void usercontrol(void)
     /*---------------------------------------------------------------------------*/
     /*                             Flyweel Control                               */
 
-    Controller2.ButtonX.released([]()
+    Controller2.ButtonX.pressed([]()
                                 { flywheel(100); });
-    Controller2.ButtonY.released([]()
+    Controller2.ButtonY.pressed([]()
                                 { Stopflywheel(); });
+
+
+    track_location();
+  
+    current_motor_angle_left = leftMotorA.position(deg);
+    current_motor_angle_right = rightMotorA.position(deg);
 
     /*---------------------------------------------------------------------------*/
     /*                             Test Autonomous                             */
-    Controller2.ButtonA.pressed([]()
-                                { autonomous(); });
+    if(Controller2.ButtonB.pressing()){
+      autonomous();
+    }
+
+    
 
     wait(20, msec); // Sleep the task for a short amount of time to
                     // prevent wasted resources.
