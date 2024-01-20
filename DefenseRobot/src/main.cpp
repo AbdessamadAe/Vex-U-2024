@@ -38,8 +38,11 @@ int ra = 0;
 /*                                Flywheel Function                           */
 void flywheel(int speed)
 {
-  Armmotor.spinFor(directionType::fwd, 3 * 360, rotationUnits::deg);
-  Flywheel.spin(vex::directionType::rev, speed, vex::velocityUnits::pct);
+  if(Armmotor.position() == 0){
+    Armmotor.spinFor(directionType::fwd, 3 * 360, rotationUnits::deg);
+    Flywheel.spin(vex::directionType::rev, speed, vex::velocityUnits::pct);
+  }
+  
 
   Brain.Screen.clearScreen();
   Brain.Screen.setCursor(1, 1);
@@ -56,7 +59,10 @@ void flywheel(int speed)
 void Stopflywheel()
 {
   Flywheel.stop();
-  Armmotor.spinFor(directionType::fwd, -2.5 * 360, rotationUnits::deg);
+  if(Armmotor.position() >= 360*2.98){
+    Armmotor.spinFor(directionType::fwd, -2.5 * 360, rotationUnits::deg);
+  }
+  
   Armmotor.setBrake(brakeType::hold);
 }
 
@@ -248,9 +254,9 @@ void usercontrol(void)
     /*---------------------------------------------------------------------------*/
     /*                             Flyweel Control                               */
 
-    Controller2.ButtonX.pressed([]()
+    Controller2.ButtonX.released([]()
                                 { flywheel(100); });
-    Controller2.ButtonY.pressed([]()
+    Controller2.ButtonY.released([]()
                                 { Stopflywheel(); });
 
     /*---------------------------------------------------------------------------*/
