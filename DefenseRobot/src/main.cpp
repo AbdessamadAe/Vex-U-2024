@@ -11,6 +11,7 @@
 // ---- END VEXCODE CONFIGURED DEVICES ----
 
 #include "vex.h"
+#include <cmath>
 
 using namespace vex;
 
@@ -33,14 +34,13 @@ motor Armmotor = motor(PORT9, ratio18_1, false);
 
 int ra = 0;
 
-
 /*---------------------------------------------------------------------------*/
 /*                                Flywheel Function                           */
 void flywheel(int speed)
 {
-  Armmotor.spinFor(directionType::fwd, 3*360, rotationUnits::deg);
+  Armmotor.spinFor(directionType::fwd, 3 * 360, rotationUnits::deg);
   Flywheel.spin(vex::directionType::rev, speed, vex::velocityUnits::pct);
-  
+
   Brain.Screen.clearScreen();
   Brain.Screen.setCursor(1, 1);
   Brain.Screen.print("Motor 1 Efficiency: %f", FlywheelA.efficiency(pct));
@@ -50,15 +50,114 @@ void flywheel(int speed)
   Brain.Screen.print("Motor 1 Temp: %f", FlywheelA.temperature(celsius));
   Brain.Screen.newLine();
   Brain.Screen.print("Motor 2 Temp: %f", FlywheelB.temperature(celsius));
-  Brain.Screen.newLine();  
-
+  Brain.Screen.newLine();
 }
 
 void Stopflywheel()
 {
   Flywheel.stop();
-  Armmotor.spinFor(directionType::fwd, -2.5*360, rotationUnits::deg);
+  Armmotor.spinFor(directionType::fwd, -2.5 * 360, rotationUnits::deg);
   Armmotor.setBrake(brakeType::hold);
+}
+
+/*---------------------------------------------------------------------------*/
+/*                            Autonomous Functions                           */
+
+int current_motor_angle_left = 0;
+int current_motor_angle_right = 0;
+float d = 0;
+float rw = 140;
+float wheeldiam = 101.6;
+float dtheta = 0;
+int stop = 0;
+
+struct
+{
+  int X = 0;
+  int Y = 0;
+  float theta = 0.0;
+} position;
+
+void track_location()
+{
+  // the distance between the front center and the right and left wheel
+  dtheta = 0;
+
+  // get the distance travelled by the left and right wheel by getting the change in angle then to mm
+  float dr = (rightMotorA.position(deg) - current_motor_angle_right) * (M_PI * wheeldiam) / 360;
+  float dl = (leftMotorA.position(deg) - current_motor_angle_left) * (M_PI * wheeldiam) / 360;
+
+  // calculating the change in the orientation of the robot
+  dtheta = (dr - dl) / (2 * rw);
+  // calulating the distance travelled by the entire robot
+
+  if (std::abs(dtheta) <= 0.008)
+  {
+    d = (dr + dl) / 2;
+  }
+  else
+  {
+    d = 2 * (dr / dtheta + rw) * sin(dtheta / 2);
+    position.theta += dtheta;
+  }
+
+  position.X += d * cos(position.theta);
+  position.Y += d * sin(position.theta);
+
+  Brain.Screen.printAt(10, 120, "X: %d", position.X);
+  Brain.Screen.printAt(10, 150, "Y: %d", position.Y);
+  Brain.Screen.printAt(10, 180, "Theta: %f", position.theta * 180 / M_PI);
+  Brain.Screen.printAt(10, 210, "dtheta: %f", dtheta * 180 / M_PI);
+}
+
+void turnRobotToFace(float angle)
+{
+  Drivetrain.turnFor(angle * 180 / M_PI, degrees);
+}
+
+void moveRobotForward(float distance)
+{
+  Drivetrain.driveFor(distance, mm);
+}
+
+void moveToCoordinate(float targetX, float targetY)
+{
+  // Calculate the difference in position
+  position.X = 0;
+  position.Y = 0;
+  position.theta = 0;
+
+  float deltaX = targetX - position.X;
+  float deltaY = targetY - position.Y;
+
+  // Calculate the angle to turn
+  float targetAngle = atan2(deltaY, deltaX);
+  float angleToTurn = targetAngle - position.theta;
+
+  // Normalize the angle
+  while (angleToTurn > M_PI)
+    angleToTurn -= 2 * M_PI;
+  while (angleToTurn < -M_PI)
+    angleToTurn += 2 * M_PI;
+
+  if (stop == 1)
+  {
+    return;
+  }
+
+  // Turn the robot to face the target
+  turnRobotToFace(angleToTurn);
+
+  // Calculate the distance to move
+  float distance = sqrt(deltaX * deltaX + deltaY * deltaY);
+
+  // Move the robot to the target
+  moveRobotForward(distance);
+
+  // Update the position
+  position.X = targetX;
+  position.Y = targetY;
+  position.theta = targetAngle;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -98,8 +197,17 @@ void autonomous(void)
   // ..........................................................................
 
   // Field dimensions: 3657.6mm x 3657.6mm
-  Drivetrain.turnFor(turnType::right, 90, rotationUnits::deg);
-  Drivetrain.driveFor(directionType::fwd, 690 * M_PI / 2, distanceUnits::mm);
+  rightMotorA.setPosition(0, deg);
+  leftMotorA.setPosition(0, deg);
+
+  //track_location();
+
+  /* current_motor_angle_left = leftMotorA.position(deg);
+  current_motor_angle_right = rightMotorA.position(deg);
+    */
+  moveToCoordinate(1037, 393);
+  moveToCoordinate(10, 393);
+  stop = 1;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -114,7 +222,10 @@ void autonomous(void)
 
 void usercontrol(void)
 {
-  Drivetrain.setStopping(brakeType::hold);
+  LeftDriveSmart.setStopping(brakeType::hold);
+  RightDriveSmart.setStopping(brakeType::hold);
+  Drivetrain.setDriveVelocity(50, pct);
+  Drivetrain.setTurnVelocity(25, pct);
 
   // User control code here, inside the loop
   while (1)
@@ -136,11 +247,17 @@ void usercontrol(void)
 
     /*---------------------------------------------------------------------------*/
     /*                             Flyweel Control                               */
-  
-    Controller2.ButtonX.pressed([](){ flywheel(100); });
-    Controller2.ButtonY.pressed([](){ Stopflywheel(); });
 
-    
+    Controller2.ButtonX.pressed([]()
+                                { flywheel(100); });
+    Controller2.ButtonY.pressed([]()
+                                { Stopflywheel(); });
+
+    /*---------------------------------------------------------------------------*/
+    /*                             Test Autonomous                             */
+    Controller2.ButtonA.pressed([]()
+                                { autonomous(); });
+
     wait(20, msec); // Sleep the task for a short amount of time to
                     // prevent wasted resources.
   }
