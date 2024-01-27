@@ -120,7 +120,8 @@ void track_location()
 
 void turnRobotToFace(float angle)
 {
-  Drivetrain.turnFor(angle * 180 / M_PI, degrees);
+  RightDriveSmart.spinFor(-90, deg);
+  LeftDriveSmart.spinFor(90, deg);
 }
 
 void moveRobotForward(float distance)
@@ -138,7 +139,7 @@ void moveToCoordinate(float targetX, float targetY)
   float deltaX = targetX - position.X;
   float deltaY = targetY - position.Y;
 
-  // Calculate the angle to turn
+  // Calculate the angle to turn 
   float targetAngle = atan2(deltaY, deltaX);
   float angleToTurn = targetAngle - position.theta;
 
@@ -211,7 +212,7 @@ void autonomous(void)
 
   Brain.Screen.printAt(30, 30, "Auto Mode");
 
-  moveToCoordinate(900, -300);
+  moveToCoordinate(-900, 300);
   stop = 1;
 }
 
