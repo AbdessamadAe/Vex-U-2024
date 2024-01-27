@@ -25,7 +25,7 @@ motor rightMotorA = motor(PORT1, ratio18_1, true);
 motor rightMotorB = motor(PORT11, ratio18_1, true);
 motor_group LeftDriveSmart = motor_group(leftMotorA, leftMotorB);
 motor_group RightDriveSmart = motor_group(rightMotorA, rightMotorB);
-drivetrain Drivetrain = drivetrain(LeftDriveSmart, RightDriveSmart, 319.19, 295, 40, mm, 1);
+drivetrain Drivetrain = drivetrain(LeftDriveSmart, RightDriveSmart, 152.4, 390, 315, mm, 0.3);
 controller Controller2 = controller(primary);
 motor FlywheelA = motor(PORT7, ratio18_1, false);
 motor FlywheelB = motor(PORT8, ratio18_1, true);
@@ -38,12 +38,12 @@ int armUp = 0;
 /*                                Flywheel Function                           */
 void flywheel(int speed)
 {
-  if(armUp == 0){
+  if (armUp == 0)
+  {
     Armmotor.spinFor(directionType::fwd, 3 * 360, rotationUnits::deg);
     armUp = 1;
   }
   Flywheel.spin(vex::directionType::rev, speed, vex::velocityUnits::pct);
-  
 
   Brain.Screen.clearScreen();
   Brain.Screen.setCursor(1, 1);
@@ -60,11 +60,12 @@ void flywheel(int speed)
 void Stopflywheel()
 {
   Flywheel.stop();
-  if(armUp == 1){
+  if (armUp == 1)
+  {
     Armmotor.spinFor(directionType::fwd, -3 * 360, rotationUnits::deg);
     armUp = 0;
   }
-  
+
   Armmotor.setBrake(brakeType::hold);
 }
 
@@ -74,7 +75,7 @@ void Stopflywheel()
 int current_motor_angle_left = 0;
 int current_motor_angle_right = 0;
 float d = 0;
-float rw = 385/2;
+float rw = 385 / 2;
 float wheeldiam = 101.6;
 float dtheta = 0;
 int stop = 0;
@@ -120,8 +121,14 @@ void track_location()
 
 void turnRobotToFace(float angle)
 {
-  RightDriveSmart.spinFor(-90, deg);
-  LeftDriveSmart.spinFor(90, deg);
+  if (angle < 0)
+  {
+    RightDriveSmart.spinFor(5.3 * angle, deg);
+  }
+  else
+  {
+    LeftDriveSmart.spinFor(-5.3 * angle, deg);
+  }
 }
 
 void moveRobotForward(float distance)
@@ -129,46 +136,10 @@ void moveRobotForward(float distance)
   Drivetrain.driveFor(-distance, mm);
 }
 
-void moveToCoordinate(float targetX, float targetY)
+void moveAndTurn(float distance, float angle)
 {
-  // Calculate the difference in position
-  position.X = 0;
-  position.Y = 0;
-  position.theta = 0;
-
-  float deltaX = targetX - position.X;
-  float deltaY = targetY - position.Y;
-
-  // Calculate the angle to turn
-  float targetAngle = atan2(deltaY, deltaX);
-  float angleToTurn = targetAngle - position.theta;
-
-  // Normalize the angle
-  while (angleToTurn > M_PI)
-    angleToTurn -= 2 * M_PI;
-  while (angleToTurn < -M_PI)
-    angleToTurn += 2 * M_PI;
-
-  if (stop == 1)
-  {
-    return;
-  }
-
-  
-
-  // Calculate the distance to move
-  float distance = sqrt(deltaX * deltaX + deltaY * deltaY);
-
-  // Move the robot to the target
   moveRobotForward(distance);
-
-  // Turn the robot to face the target
-  turnRobotToFace(angleToTurn);
-
-  // Update the position
-  position.X = targetX;
-  position.Y = targetY;
-  position.theta = targetAngle;
+  turnRobotToFace(angle);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -213,8 +184,7 @@ void autonomous(void)
 
   Brain.Screen.printAt(30, 30, "Auto Mode");
 
-  moveToCoordinate(-900, 300);
-  stop = 1;
+  moveAndTurn(300, 90);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -248,8 +218,6 @@ void usercontrol(void)
     LeftDriveSmart.spin(vex::directionType::fwd, -Controller2.Axis2.position() - Controller2.Axis4.position(), pct);
     // ........................................................................
 
-    // Testing autonomous functions
-
     // Field dimensions: 3657.6mm x 3657.6mm
 
     /*---------------------------------------------------------------------------*/
@@ -260,19 +228,17 @@ void usercontrol(void)
     Controller2.ButtonY.pressed([]()
                                 { Stopflywheel(); });
 
+    /* track_location();
 
-    track_location();
-  
     current_motor_angle_left = leftMotorA.position(deg);
-    current_motor_angle_right = rightMotorA.position(deg);
+    current_motor_angle_right = rightMotorA.position(deg); */
 
     /*---------------------------------------------------------------------------*/
     /*                             Test Autonomous                             */
-    if(Controller2.ButtonB.pressing()){
-      autonomous();
+    if (Controller2.ButtonB.pressing())
+    {
+      moveRobotForward(300);
     }
-
-    
 
     wait(20, msec); // Sleep the task for a short amount of time to
                     // prevent wasted resources.
