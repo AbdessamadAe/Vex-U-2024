@@ -40,92 +40,17 @@ int armUp = 0;
 
 /*---------------------------------------------------------------------------*/
 /*                                Flywheel Function                           */
-void flywheel(int speed)
-{
-  if (armUp == 0)
-  {
-    Armmotor.spinFor(directionType::fwd, 3 * 360, rotationUnits::deg);
-    armUp = 1;
-  }
-  Flywheel.spin(vex::directionType::rev, speed, vex::velocityUnits::pct);
 
-  Brain.Screen.clearScreen();
-  Brain.Screen.setCursor(1, 1);
-  Brain.Screen.print("Motor 1 Efficiency: %f", FlywheelA.efficiency(pct));
-  Brain.Screen.newLine();
-  Brain.Screen.print("Motor 2 Efficiency: %f", FlywheelB.efficiency(pct));
-  Brain.Screen.newLine();
-  Brain.Screen.print("Motor 1 Temp: %f", FlywheelA.temperature(celsius));
-  Brain.Screen.newLine();
-  Brain.Screen.print("Motor 2 Temp: %f", FlywheelB.temperature(celsius));
-  Brain.Screen.newLine();
-}
-
-void Stopflywheel()
-{
-  Flywheel.stop();
-  if (armUp == 1)
-  {
-    Armmotor.spinFor(directionType::fwd, -3 * 360, rotationUnits::deg);
-    armUp = 0;
-  }
-
-  Armmotor.setBrake(brakeType::hold);
-}
 
 /*---------------------------------------------------------------------------*/
 /*                            Autonomous Functions                           */
 
-int current_motor_angle_left = 0;
-int current_motor_angle_right = 0;
-float d = 0;
-float rw = 385 / 2;
-float wheeldiam = 101.6;
-float dtheta = 0;
-int stop = 0;
 
-struct
-{
-  int X = 0;
-  int Y = 0;
-  float theta = 0.0;
-} position;
-
-void track_location()
-{
-  // the distance between the front center and the right and left wheel
-  dtheta = 0;
-
-  // get the distance travelled by the left and right wheel by getting the change in angle then to mm
-  float dr = (rightMotorA.position(deg) - current_motor_angle_right) * (M_PI * wheeldiam) / 360;
-  float dl = (leftMotorA.position(deg) - current_motor_angle_left) * (M_PI * wheeldiam) / 360;
-
-  // calculating the change in the orientation of the robot
-  dtheta = (dr - dl) / (2 * rw);
-  // calulating the distance travelled by the entire robot
-
-  if (std::abs(dtheta) <= 0.01)
-  {
-    d = (dr + dl) / 2;
-  }
-  else
-  {
-    d = 2 * (dr / dtheta + rw) * sin(dtheta / 2);
-    position.theta += dtheta;
-  }
-
-  position.X += d * cos(position.theta);
-  position.Y += d * sin(position.theta);
-
-  Brain.Screen.printAt(10, 120, "X: %d", position.X);
-  Brain.Screen.printAt(10, 150, "Y: %d", position.Y);
-  Brain.Screen.printAt(10, 180, "Theta: %f", position.theta * 180 / M_PI);
-  Brain.Screen.printAt(10, 210, "dtheta: %f", dtheta * 180 / M_PI);
-}
 
 
 //elementary autonoumous movements 
 
+//========================================================================================
 //========================================================================================
 
 //move toward desired location using drivetrain initialized with hyperparametrs through testing
@@ -196,9 +121,33 @@ void moveAndTurn(float distance, float angle)
 }
 
 
+//function to activate the arm and start the flywheel rotation, take speed of flywheel as argument
+void flywheel(int speed)
+{
+  if (armUp == 0)
+  {
+    Armmotor.spinFor(directionType::fwd, 3 * 360, rotationUnits::deg);
+    armUp = 1;
+  }
+  Flywheel.spin(vex::directionType::rev, speed, vex::velocityUnits::pct);
+}
 
+
+//function to stop the flywheel and take the arm down
+void Stopflywheel()
+{
+  Flywheel.stop();
+  if (armUp == 1)
+  {
+    Armmotor.spinFor(directionType::fwd, -3 * 360, rotationUnits::deg);
+    armUp = 0;
+  }
+
+  Armmotor.setBrake(brakeType::hold);
+}
 
 //===============================================================================================
+//================================================================================================
 
 
 
@@ -332,4 +281,68 @@ int main()
   {
     wait(100, msec);
   }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//unused functions ==============================================================================
+int current_motor_angle_left = 0;
+int current_motor_angle_right = 0;
+float d = 0;
+float rw = 385 / 2;
+float wheeldiam = 101.6;
+float dtheta = 0;
+int stop = 0;
+
+struct
+{
+  int X = 0;
+  int Y = 0;
+  float theta = 0.0;
+} position;
+
+void track_location()
+{
+  // the distance between the front center and the right and left wheel
+  dtheta = 0;
+
+  // get the distance travelled by the left and right wheel by getting the change in angle then to mm
+  float dr = (rightMotorA.position(deg) - current_motor_angle_right) * (M_PI * wheeldiam) / 360;
+  float dl = (leftMotorA.position(deg) - current_motor_angle_left) * (M_PI * wheeldiam) / 360;
+
+  // calculating the change in the orientation of the robot
+  dtheta = (dr - dl) / (2 * rw);
+  // calulating the distance travelled by the entire robot
+
+  if (std::abs(dtheta) <= 0.01)
+  {
+    d = (dr + dl) / 2;
+  }
+  else
+  {
+    d = 2 * (dr / dtheta + rw) * sin(dtheta / 2);
+    position.theta += dtheta;
+  }
+
+  position.X += d * cos(position.theta);
+  position.Y += d * sin(position.theta);
+
+  Brain.Screen.printAt(10, 120, "X: %d", position.X);
+  Brain.Screen.printAt(10, 150, "Y: %d", position.Y);
+  Brain.Screen.printAt(10, 180, "Theta: %f", position.theta * 180 / M_PI);
+  Brain.Screen.printAt(10, 210, "dtheta: %f", dtheta * 180 / M_PI);
 }
