@@ -154,7 +154,6 @@ void moveToCoordinate(float targetX, float targetY)
   }
 
   
-
   // Calculate the distance to move
   float distance = sqrt(deltaX * deltaX + deltaY * deltaY);
 
