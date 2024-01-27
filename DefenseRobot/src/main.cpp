@@ -243,9 +243,18 @@ void autonomous(void)
   rightMotorA.setPosition(0, deg);
   leftMotorA.setPosition(0, deg);
 
-  Brain.Screen.printAt(30, 30, "Auto Mode");
+  //forward 600
+      moveRobot(600);
+      //turn 90 with reverse
+      turnRobotToAngle1D(60, false);
+      //move forward 100
+      moveRobot(500, 2);
 
-  moveAndTurn(300, 90);
+      turnRobotToAngle1D(30);
+      moveRobot(50, 2);
+      moveRobot(-250, 2);
+      Drivetrain.setDriveVelocity(300, pct);
+      moveRobot(300, 2);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -298,18 +307,7 @@ void usercontrol(void)
     /*                             Test Autonomous                             */
     if (Controller2.ButtonB.pressing())
     {
-      //forward 600
-      moveRobot(600);
-      //turn 90 with reverse
-      turnRobotToAngle1D(60, false);
-      //move forward 100
-      moveRobot(500, 2);
-
-      turnRobotToAngle1D(30);
-      moveRobot(50, 2);
-      moveRobot(-250, 2);
-      Drivetrain.setDriveVelocity(300, pct);
-      moveRobot(300, 2);
+      autonomous();
     }
 
     wait(20, msec); // Sleep the task for a short amount of time to
