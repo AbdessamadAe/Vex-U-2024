@@ -17,6 +17,10 @@ using namespace vex;
 
 // A global instance of competition
 competition Competition;
+int GEAR_RATIO = 3; //84/48;
+float WHEEL_DIAMETER = 101.6;
+float WHEEL_CIRCUMFERENCE = (WHEEL_DIAMETER/2) * M_PI;
+float TURN_ANGLE_MOTOR_RATIO = 5.4;
 
 // define your global instances of motors and other devices here
 motor leftMotorA = motor(PORT10, ratio18_1, false);
@@ -25,7 +29,7 @@ motor rightMotorA = motor(PORT1, ratio18_1, true);
 motor rightMotorB = motor(PORT11, ratio18_1, true);
 motor_group LeftDriveSmart = motor_group(leftMotorA, leftMotorB);
 motor_group RightDriveSmart = motor_group(rightMotorA, rightMotorB);
-drivetrain Drivetrain = drivetrain(LeftDriveSmart, RightDriveSmart, 152.4, 390, 315, mm, 0.3);
+drivetrain Drivetrain = drivetrain(LeftDriveSmart, RightDriveSmart, WHEEL_CIRCUMFERENCE, 390, 315, mm, GEAR_RATIO);
 controller Controller2 = controller(primary);
 motor FlywheelA = motor(PORT7, ratio18_1, false);
 motor FlywheelB = motor(PORT8, ratio18_1, true);
@@ -119,28 +123,85 @@ void track_location()
   Brain.Screen.printAt(10, 210, "dtheta: %f", dtheta * 180 / M_PI);
 }
 
-void turnRobotToFace(float angle)
+
+//elementary autonoumous movements 
+
+//========================================================================================
+
+//move toward desired location using drivetrain initialized with hyperparametrs through testing
+void moveRobot(float distance, int timout=0)
+{
+  if(timout != 0){
+    Drivetrain.setTimeout(timout, sec);
+  }
+  Drivetrain.driveFor(-distance, mm);
+}
+
+
+//function to make robot turn toward angle in degree, use a hyperparameter that has been found by testing 
+//this funtion use only one set (Right or Left) of motors to turn the robot 
+//Good for not making the ball spli but bad for speed, very slow 
+//the reverse parameter is set to false to make the robot turn while going forward, true while going backward
+//TO DO: add a timout similar to the moveForward timeout
+void turnRobotToAngle1D(float angle, bool reverse=false)
+{
+  if(!reverse){
+    if (angle < 0)
+    {
+      RightDriveSmart.spinFor(TURN_ANGLE_MOTOR_RATIO * angle, deg);
+    }
+    else
+    {
+      LeftDriveSmart.spinFor(-TURN_ANGLE_MOTOR_RATIO * angle, deg);
+    }
+  }
+  else{
+    if (angle < 0)
+    {
+      LeftDriveSmart.spinFor(-TURN_ANGLE_MOTOR_RATIO * angle, deg);
+    }
+    else
+    {
+      RightDriveSmart.spinFor(TURN_ANGLE_MOTOR_RATIO * angle, deg);
+    }
+  }
+  
+}
+
+
+//function tha uses both the righ and left mototors to make a turn
+//good speed but bad ball control 
+
+//TO DO: add a timout similar to the moveForward timeout
+void turnRobotToAngle2D(float angle, bool reverse=false)
 {
   if (angle < 0)
   {
-    RightDriveSmart.spinFor(5.3 * angle, deg);
+    RightDriveSmart.spinFor(TURN_ANGLE_MOTOR_RATIO/2 * angle, deg);
+    LeftDriveSmart.spinFor(-TURN_ANGLE_MOTOR_RATIO/2 * angle, deg);
   }
   else
   {
-    LeftDriveSmart.spinFor(-5.3 * angle, deg);
+    LeftDriveSmart.spinFor(-TURN_ANGLE_MOTOR_RATIO/2 * angle, deg);
+    RightDriveSmart.spinFor(TURN_ANGLE_MOTOR_RATIO/2 * angle, deg);
   }
 }
 
-void moveRobotForward(float distance)
-{
-  Drivetrain.driveFor(distance, mm);
-}
 
+//function to both move toward and turn an angle
 void moveAndTurn(float distance, float angle)
 {
-  moveRobotForward(distance);
-  turnRobotToFace(angle);
+  moveRobot(distance);
+  turnRobotToAngle2D(angle);
 }
+
+
+
+
+//===============================================================================================
+
+
+
 
 /*---------------------------------------------------------------------------*/
 /*                          Pre-Autonomous Functions                         */
@@ -237,7 +298,18 @@ void usercontrol(void)
     /*                             Test Autonomous                             */
     if (Controller2.ButtonB.pressing())
     {
-      moveRobotForward(300);
+      //forward 600
+      moveRobot(600);
+      //turn 90 with reverse
+      turnRobotToAngle1D(60, false);
+      //move forward 100
+      moveRobot(500, 2);
+
+      turnRobotToAngle1D(30);
+      moveRobot(50, 2);
+      moveRobot(-250, 2);
+      Drivetrain.setDriveVelocity(300, pct);
+      moveRobot(300, 2);
     }
 
     wait(20, msec); // Sleep the task for a short amount of time to
