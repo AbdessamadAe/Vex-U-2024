@@ -126,7 +126,8 @@ void flywheel(int speed)
 {
   if (armUp == 0)
   {
-    Armmotor.spinFor(directionType::fwd, 3 * 360, rotationUnits::deg);
+    Armmotor.setVelocity(100, pct);
+    Armmotor.spinFor(directionType::fwd, 3.2 * 360, rotationUnits::deg);
     armUp = 1;
   }
   Flywheel.spin(vex::directionType::rev, speed, vex::velocityUnits::pct);
@@ -139,7 +140,7 @@ void Stopflywheel()
   Flywheel.stop();
   if (armUp == 1)
   {
-    Armmotor.spinFor(directionType::fwd, -3 * 360, rotationUnits::deg);
+    Armmotor.spinFor(directionType::fwd, -3.1 * 360, rotationUnits::deg);
     armUp = 0;
   }
 
@@ -202,7 +203,7 @@ void autonomous(void)
       turnRobotToAngle1D(30);
       moveRobot(50, 2);
       moveRobot(-250, 2);
-      Drivetrain.setDriveVelocity(300, pct);
+      Drivetrain.setDriveVelocity(100, pct);
       moveRobot(300, 2);
 }
 
