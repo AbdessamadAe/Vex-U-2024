@@ -24,9 +24,9 @@
 
   // define your global instances of motors and other devices here
   motor leftMotorA = motor(PORT1, ratio18_1, false);
-  motor leftMotorB = motor(PORT11, ratio18_1, false);
+  motor leftMotorB = motor(PORT11, ratio18_1, true);
   motor_group LeftDriveSmart = motor_group(leftMotorA, leftMotorB);
-  motor rightMotorA = motor(PORT12, ratio18_1, true);
+  motor rightMotorA = motor(PORT12, ratio18_1, false);
   motor rightMotorB = motor(PORT4, ratio18_1, true);
   motor_group RightDriveSmart = motor_group(rightMotorA, rightMotorB);
   drivetrain Drivetrain = drivetrain(LeftDriveSmart, RightDriveSmart, 319.19, 295, 40, mm, 1);
@@ -37,6 +37,7 @@
   triport Threewireport = triport(PORT22);
   limit switch_sensor = limit(Threewireport.A);
   inertial inertial_sensor = inertial(PORT16);
+  gps gps_sensor = gps(PORT18);
 
   // custom global variables
   double dist = 100000;
@@ -71,20 +72,20 @@
     {
       if (strcmp(side, "right"))
       {
-        return -(Controller1.Axis2.position() - Controller1.Axis4.position());
+        return -(Controller1.Axis2.position() + Controller1.Axis4.position());
       }
       else if (strcmp(side, "left"))
       {
-        return -(Controller1.Axis2.position() + Controller1.Axis4.position());
+        return -(Controller1.Axis2.position() - Controller1.Axis4.position());
       }
     }
     if (strcmp(side, "right"))
     {
-      return Controller1.Axis2.position() + Controller1.Axis4.position();
+      return Controller1.Axis2.position() - Controller1.Axis4.position();
     }
     else if (strcmp(side, "left"))
     {
-      return Controller1.Axis2.position() - Controller1.Axis4.position();
+      return Controller1.Axis2.position() + Controller1.Axis4.position();
     }
     else
     {
@@ -189,7 +190,7 @@
 
       current_angle = inertial_sensor.heading();
       error_angle = current_angle - target_angle;
-      screen.printAt(10, 180, "Turning smoothly ....");
+      //screen.printAt(10, 180, "Turning smoothly ....");
 
       // break the automated turning in case the robot stuck
       if (Controller1.ButtonL1.pressing())
@@ -269,11 +270,16 @@
     Drivetrain.setDriveVelocity(50, pct);
     Drivetrain.setTurnVelocity(25, pct);
     inertial_sensor.calibrate();
+    gps_sensor.calibrate();
 
     while (inertial_sensor.isCalibrating())
     {
       wait(50, msec);
     }
+    while(gps_sensor.isCalibrating()){
+      wait(50, msec);
+    }
+
 
     rightMotorA.setPosition(0, deg);
     leftMotorA.setPosition(0, deg);
@@ -334,24 +340,21 @@
         LeftDriveSmart.stop(vex::brakeType::brake);
       }
 
-      track_location();
 
       current_motor_angle_left = leftMotorA.position(deg);
       current_motor_angle_right = rightMotorA.position(deg);
       position.theta = inertial_sensor.heading() * 180 / M_PI;
 
-      moveToCoordinate(1037, 393);
-      moveToCoordinate(10, 393);
       stop = 1;
 
 
       visionSensor.takeSnapshot(GREENTRIBALL);
       if (visionSensor.largestObject.exists)
       {
-        screen.printAt(10, 30, "Green Triball X: %d ", visionSensor.largestObject.centerX);
-        screen.printAt(230, 30, "Y: %d ", visionSensor.largestObject.centerY);
-        screen.printAt(310, 30, "W: %d ", visionSensor.largestObject.width);
-        screen.printAt(370, 30, "H %d ", visionSensor.largestObject.height);
+        //screen.printAt(10, 30, "Green Triball X: %d ", visionSensor.largestObject.centerX);
+        //screen.printAt(230, 30, "Y: %d ", visionSensor.largestObject.centerY);
+        //screen.printAt(310, 30, "W: %d ", visionSensor.largestObject.width);
+        //screen.printAt(370, 30, "H %d ", visionSensor.largestObject.height);
       }
 
       if (Controller1.ButtonR2.pressing())
@@ -374,6 +377,7 @@
       }
 
       screen.printAt(10, 90, "Inertial Sensor heading: %f", inertial_sensor.heading(degrees));
+      screen.printAt(10, 120, "GPS X:%f Y:%f", gps_sensor.xPosition(), gps_sensor.yPosition());
 
       wait(20, msec); // Sleep the task for a short amount of time to
                       // prevent wasted resources.
