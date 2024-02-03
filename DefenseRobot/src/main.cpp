@@ -198,13 +198,25 @@ void autonomous(void)
       //turn 90 with reverse
       turnRobotToAngle1D(60, false);
       //move forward 100
+      Drivetrain.setDriveVelocity(150, pct);
       moveRobot(500, 2);
 
       turnRobotToAngle1D(30);
       moveRobot(50, 2);
+      Drivetrain.setDriveVelocity(70, pct);
       moveRobot(-250, 2);
-      Drivetrain.setDriveVelocity(100, pct);
+
+      Drivetrain.setDriveVelocity(200, pct);
       moveRobot(300, 2);
+
+      Drivetrain.setDriveVelocity(100, pct);
+      moveRobot(-120);
+      turnRobotToAngle1D(-65, true);
+      
+      moveRobot(-350);
+      turnRobotToAngle1D(-45, true);
+      turnRobotToAngle1D(6);
+      moveRobot(-3700);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -258,6 +270,7 @@ void usercontrol(void)
     if (Controller2.ButtonB.pressing())
     {
       autonomous();
+      
     }
 
     wait(20, msec); // Sleep the task for a short amount of time to
