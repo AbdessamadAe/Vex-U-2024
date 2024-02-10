@@ -304,9 +304,70 @@ int main()
 
 
 
+/****************************************************************************/
+/*                             DO NOT DELETE                                */
+/*                                                                          */
+/*                              GPS Testing                                 */
+/*                                                                          */
+/*                                                                          */
+/****************************************************************************/
+
+void drive_to_with_gps(double x_target, double y_target) {
+  double x_distance_to_drive = x_target - gps_sensor.xPosition(mm);
+
+  double y_distance_to_drive = y_target - gps_sensor.yPosition(mm);
+
+  if (x_distance_to_drive == 0 && y_distance_to_drive == 0) {
+    return;
+  }
+
+  double magnitude = sqrt(x_distance_to_drive * x_distance_to_drive + y_distance_to_drive * y_distance_to_drive);
+
+  double angle = std::asin((std::sin(M_PI / 2.0) * x_distance_to_drive) / magnitude) * 180.0 / M_PI;
+
+  if (y_distance_to_drive < 0) {
+    angle = 180 - angle;
+  }
+
+  Drivetrain.turnFor(angle, degrees, true);
+  Drivetrain.driveFor(magnitude, mm, true);
+}
 
 
 
+
+void gps_drive_test() {
+  Drivetrain.setDriveVelocity(20, pct);
+  Drivetrain.setTurnVelocity(20, pct);
+
+  double x_target = 1.3;
+  double y_target = 0.5;
+
+  while (gps_sensor.xPosition(mm) != x_target || gps_sensor.yPosition(mm) != y_target) {
+    if (gps_sensor.xPosition(mm) > x_target-0.05 || gps_sensor.xPosition(mm) < x_target+0.05) {
+      return;
+    }
+
+    if (gps_sensor.yPosition(mm) > y_target-0.05 || gps_sensor.yPosition(mm) < y_target+0.05) {
+      return;
+    }
+    
+    drive_to_with_gps(x_target, y_target);
+  }
+  
+}
+
+  // if (Controller1.ButtonB.pressing()) {
+  //   gps_drive_test();
+  // }
+
+/****************************************************************************/
+/*                                                                          */
+/*                                                                          */
+/*                                    END                                   */
+/*                                                                          */
+/*                                                                          */
+/****************************************************************************/
 
 
 
