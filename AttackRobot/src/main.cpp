@@ -16,25 +16,23 @@
 using namespace vex;
 
 
-
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
 /*                             Global Instances                              */
 /*                                                                           */
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
-
 // A global instance of competition
 competition Competition;
 
 // define your global instances of motors and other devices here
-motor leftMotorA = motor(PORT1, ratio18_1, false);
-motor leftMotorB = motor(PORT11, ratio18_1, true);
-motor_group LeftDriveSmart = motor_group(leftMotorA, leftMotorB);
+motor leftFrontMotor = motor(PORT1, ratio18_1, true);
+motor leftBackMotor = motor(PORT11, ratio18_1, true);
+motor_group LeftDriveSmart = motor_group(leftFrontMotor, leftBackMotor);
 
-motor rightMotorA = motor(PORT12, ratio18_1, false);
-motor rightMotorB = motor(PORT4, ratio18_1, true);
-motor_group RightDriveSmart = motor_group(rightMotorA, rightMotorB);
+motor rightFrontMotor = motor(PORT12, ratio18_1, true);
+motor rightBackMotor = motor(PORT4, ratio18_1, true);
+motor_group RightDriveSmart = motor_group(rightFrontMotor, rightBackMotor);
 
 drivetrain Drivetrain =
     drivetrain(LeftDriveSmart, RightDriveSmart, 319.19, 295, 40, mm, 1);
@@ -57,7 +55,6 @@ gps gps_sensor = gps(PORT18);
 /*                                                                           */
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
-
 // define variable for remote controller enable/disable
 bool RemoteControlCodeEnabled = false;
 
@@ -91,8 +88,7 @@ struct {
 void face_angle_smooth(float target_angle = 50.0, float acceptable_error = 5);
 float get_speed_direction(const char *side);
 void switch_control_direction(time_t *controllerStartTimer);
-void auto_face_greentriball(vision visionSensor, int error_margin = 50,
-                            int camera_x = 158);
+void auto_face_greentriball(vision visionSensor);
 
 
 
@@ -106,9 +102,8 @@ void auto_face_greentriball(vision visionSensor, int error_margin = 50,
 /*  function is only called once after the V5 has been powered on and        */
 /*  not every time that the robot is disabled.                               */
 /*---------------------------------------------------------------------------*/
-
 void pre_auton(void) {
-  // Initializing Robot Configuration. DO NOT REMOVE!
+  // DO NOT REMOVE! Initializing Robot Configuration.
   vexcodeInit();
   // All activities that occur before the competition starts
   // Example: clearing encoders, setting servo positions, ...
@@ -159,21 +154,17 @@ void usercontrol(void) {
     wait(50, msec);
   }
 
-  rightMotorA.setPosition(0, deg);
-  leftMotorA.setPosition(0, deg);
-  double turn_importance = 0.5;
-
+  rightFrontMotor.setPosition(0, deg);
+  leftFrontMotor.setPosition(0, deg);
 
 
   /***************************************************************************/
   /*        Build functionalities for your Joystick inside the loop          */
   /***************************************************************************/
-
   while (1) {
     /*************************************************************************/
     /*                         Quick Buttons Set Up                          */
     /*************************************************************************/
-
     if (Controller1.ButtonR1.pressing()) {
       autonomous();
       }
@@ -195,7 +186,6 @@ void usercontrol(void) {
     /*************************************************************************/
     /*                            Vision Sensor                              */
     /*************************************************************************/
-
     // visionSensor.takeSnapshot(GREENTRIBALL);
     // if (visionSensor.largestObject.exists) {
       // screen.printAt(10, 30, "Green Triball X: %d ",
@@ -210,51 +200,12 @@ void usercontrol(void) {
     /*************************************************************************/
     /*                              Drivetrain                               */
     /*************************************************************************/
-
-    //todo Need to Fix Left A and Right B motors since Left B, Right A are fixed
-
-    // double turn_value = Controller1.Axis1.position();
-    // double turn_volts = turn_value * 0.12;
-
-    // double forward_value = Controller1.Axis3.position();
-    // double forward_volts = forward_value * 0.12 * (1 - (std::abs(turn_volts)/12.0) * turn_importance);
-
-    // leftMotorA.spin(fwd, forward_volts - turn_volts, volt);
-    // rightMotorA.spin(reverse, forward_volts - turn_volts, volt);
-    
-    // leftMotorB.spin(fwd, forward_volts + turn_volts, volt);
-    // rightMotorB.spin(reverse, forward_volts + turn_volts, volt);
-
-    // ----------------------------- code 2------------------------------------
-
-    // if (Controller1.Axis1.position(pct) > 10) {
-    //   LeftDriveSmart.spin(fwd, Controller1.Axis1.position(), pct);
-    //   RightDriveSmart.spin(reverse, Controller1.Axis1.position(), pct);
-    // }
-
-    // if (Controller1.Axis1.position(pct) < -10) {
-    //   LeftDriveSmart.spin(reverse, Controller1.Axis1.position(), pct);
-    //   RightDriveSmart.spin(fwd, Controller1.Axis1.position(), pct);
-    // }
-    
-    // if (Controller1.Axis3.position(pct) > 10) {
-    //   LeftDriveSmart.spin(fwd, Controller1.Axis1.position(), pct);
-    //   RightDriveSmart.spin(fwd, Controller1.Axis1.position(), pct);
-    // }
-
-    // if (Controller1.Axis3.position(pct) < -10) {
-    //   LeftDriveSmart.spin(reverse, Controller1.Axis1.position(), pct);
-    //   RightDriveSmart.spin(reverse, Controller1.Axis1.position(), pct);
-    // }
-
-    // ----------------------------- code 3------------------------------------
-
     obstacle_distance = 100000;
     if (frontDistance.isObjectDetected()) {
       obstacle_distance = frontDistance.objectDistance(mm);
     }
 
-    if (obstacle_distance > 150 || Controller1.Axis2.position() < 0) {
+    if (obstacle_distance > 150 || Controller1.Axis1.position() < 0) {
       RightDriveSmart.spin(vex::directionType::fwd,
                            get_speed_direction("right"),
                            vex::velocityUnits::pct);
@@ -270,19 +221,15 @@ void usercontrol(void) {
     /*************************************************************************/
     /*         Tracking the Motors Angle && the Heading of the Robot         */
     /*************************************************************************/
-    current_motor_angle_left = leftMotorA.position(deg);
-    current_motor_angle_right = rightMotorA.position(deg);
+    current_motor_angle_left = leftFrontMotor.position(deg);
+    current_motor_angle_right = rightFrontMotor.position(deg);
     position.theta = inertial_sensor.heading() * 180 / M_PI;
 
-
-
-    stop = 1;
 
 
     /*************************************************************************/
     /*                            Temp Code                                  */
     /*************************************************************************/
-
     screen.printAt(10, 10, "Dist: %f", obstacle_distance);
     screen.printAt(10, 60, "Reverse Control: %d", reverserControl);
     screen.printAt(10, 90, "Inertial Sensor heading: %f",
@@ -290,7 +237,8 @@ void usercontrol(void) {
     screen.printAt(10, 120, "GPS X:%lf Y:%lf", gps_sensor.xPosition(mm),
                    gps_sensor.yPosition(mm));
     screen.printAt(10, 150, "GPS Quality: %lf", gps_sensor.quality());
-
+    
+    stop = 1;
 
     /******************************* END ************************************/
     wait(20, msec); // Sleep the task to prevent wasted resources.
@@ -329,41 +277,6 @@ int main() {
 /*                                                                           */
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
-
-
-// function for automatically staring the robot toward a detected green triball
-// given the visionSensor object that took the snapshot
-// It will also move the robot toward the triball until collision is detected
-// with the front switch sensor take into account the location of the camera and
-// a margin error (optional)
-void auto_face_greentriball(vision visionSensor, int error_margin = 50,
-                            int camera_x = 158) {
-  if (visionSensor.largestObject.exists) {
-    int triball_x = visionSensor.largestObject.centerX;
-    if (triball_x <= (camera_x - error_margin)) {
-      // turn left
-      float motor_speed = 25 * triball_x / camera_x;
-      RightDriveSmart.spin(vex::directionType::fwd, motor_speed, pct);
-      LeftDriveSmart.spin(vex::directionType::rev, motor_speed, pct);
-    } else if (triball_x >= (camera_x + error_margin)) {
-      // turn right
-      float motor_speed = 25 * (1 - camera_x / triball_x);
-      RightDriveSmart.spin(vex::directionType::rev, motor_speed, pct);
-      LeftDriveSmart.spin(vex::directionType::fwd, motor_speed, pct);
-    } else if (!switch_sensor.pressing()) {
-      RightDriveSmart.spin(fwd, 25, pct);
-      LeftDriveSmart.spin(fwd, 25, pct);
-    } else {
-      // break
-      RightDriveSmart.stop(vex::brakeType::brake);
-      LeftDriveSmart.stop(vex::brakeType::brake);
-    }
-  }
-  return;
-}
-
-
-
 void face_angle_smooth(float target_angle, float acceptable_error) {
   float current_angle = inertial_sensor.heading();
   float error_angle = current_angle - target_angle;
@@ -405,27 +318,61 @@ void face_angle_smooth(float target_angle, float acceptable_error) {
 
 
 
+// function for automatically staring the robot toward a detected green triball
+// given the visionSensor object that took the snapshot
+// It will also move the robot toward the triball until collision is detected
+// with the front switch sensor take into account the location of the camera and
+// a margin error (optional)
+void auto_face_greentriball(vision visionSensor) {
+  int error_margin = 50, camera_x = 158;
+
+  if (visionSensor.largestObject.exists) {
+    int triball_x = visionSensor.largestObject.centerX;
+    if (triball_x <= (camera_x - error_margin)) {
+      // turn left
+      float motor_speed = 25 * triball_x / camera_x;
+      RightDriveSmart.spin(vex::directionType::fwd, motor_speed, pct);
+      LeftDriveSmart.spin(vex::directionType::rev, motor_speed, pct);
+    } else if (triball_x >= (camera_x + error_margin)) {
+      // turn right
+      float motor_speed = 25 * (1 - camera_x / triball_x);
+      RightDriveSmart.spin(vex::directionType::rev, motor_speed, pct);
+      LeftDriveSmart.spin(vex::directionType::fwd, motor_speed, pct);
+    } else if (!switch_sensor.pressing()) {
+      RightDriveSmart.spin(fwd, 25, pct);
+      LeftDriveSmart.spin(fwd, 25, pct);
+    } else {
+      // break
+      RightDriveSmart.stop(vex::brakeType::brake);
+      LeftDriveSmart.stop(vex::brakeType::brake);
+    }
+  }
+  return;
+}
+
+
+
 // function to get the speed for the rotation of the motors depending on wether
 // the controls are reversed or not reversing the controls specifically the
-// Axis2 is done by pressing R2 This can be useful for easier control of the
+// Axis1 is done by pressing R2 This can be useful for easier control of the
 // robots when its rotated 180 degrees
 float get_speed_direction(const char *side) {
   if (reverserControl) {
     if (strcmp(side, "right")) {
-      return -(Controller1.Axis2.position() + Controller1.Axis4.position());
+      return - Controller1.Axis1.position() + Controller1.Axis3.position();
     }
-    
+
     if (strcmp(side, "left")) {
-      return -(Controller1.Axis2.position() - Controller1.Axis4.position());
+      return - Controller1.Axis1.position() - Controller1.Axis3.position();
     }
   }
 
   if (strcmp(side, "right")) {
-    return Controller1.Axis2.position() - Controller1.Axis4.position();
+    return - Controller1.Axis1.position() - Controller1.Axis3.position();
   }
   
   if (strcmp(side, "left")) {
-    return Controller1.Axis2.position() + Controller1.Axis4.position();
+    return Controller1.Axis3.position() - Controller1.Axis1.position();
   }
   
   return 0;
