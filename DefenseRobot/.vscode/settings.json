@@ -1,6 +1,6 @@
 {
 	"C_Cpp.default.systemIncludePath": [
-		"${config:vexrobotics.vexcode.Cpp.Sdk.Home}/V5/V5_20220726_10_00_00/vexv5/gcc/include/sys"
+		"${config:vexrobotics.vexcode.Cpp.Sdk.Home}\\V5\\V5_20220726_10_00_00\\vexv5\\gcc\\include\\sys"
 	],
 	"C_Cpp_Runner.msvcBatchPath": "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Auxiliary/Build/vcvarsall.bat",
 	"C_Cpp_Runner.cCompilerPath": "gcc",
