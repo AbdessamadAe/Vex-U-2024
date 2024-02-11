@@ -54,12 +54,11 @@ int armUp = 0;
 //========================================================================================
 
 //move toward desired location using drivetrain initialized with hyperparametrs through testing
-void moveRobot(float distance, int timout=0)
+void moveRobot(float distance, int timout=5)
 {
-  if(timout != 0){
-    Drivetrain.setTimeout(timout, sec);
-  }
-  Drivetrain.driveFor(-distance, mm);
+  
+   Drivetrain.setTimeout(timout, sec);
+   Drivetrain.driveFor(-distance, mm);
 }
 
 
@@ -226,7 +225,7 @@ void autonomous(void)
 /*  This task is used to control your robot during the user control phase of */
 /*  a VEX Competition.                                                       */
 /*                                                                           */
-/*  You must modify the code to add your own robot specific commands here.   */
+/*  You must modify the code to add your own gprobot specific commands here.   */
 /*---------------------------------------------------------------------------*/
 
 void usercontrol(void)
@@ -246,8 +245,8 @@ void usercontrol(void)
     // ........................................................................
     // Insert user code here. This is where you use the joystick values to
     // update your motors, etc.
-    RightDriveSmart.spin(vex::directionType::fwd, -Controller2.Axis2.position() + Controller2.Axis4.position(), pct);
-    LeftDriveSmart.spin(vex::directionType::fwd, -Controller2.Axis2.position() - Controller2.Axis4.position(), pct);
+    RightDriveSmart.spin(vex::directionType::fwd, Controller2.Axis3.position() + Controller2.Axis1.position(), pct);
+    LeftDriveSmart.spin(vex::directionType::fwd, Controller2.Axis3.position() - Controller2.Axis1.position(), pct);
     // ........................................................................
 
     // Field dimensions: 3657.6mm x 3657.6mm
@@ -312,6 +311,7 @@ int main()
 /*                                                                          */
 /****************************************************************************/
 
+/*
 void drive_to_with_gps(double x_target, double y_target) {
   double x_distance_to_drive = x_target - gps_sensor.xPosition(mm);
 
@@ -356,6 +356,7 @@ void gps_drive_test() {
   }
   
 }
+*/
 
   // if (Controller1.ButtonB.pressing()) {
   //   gps_drive_test();
