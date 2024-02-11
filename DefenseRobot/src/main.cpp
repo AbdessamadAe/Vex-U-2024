@@ -38,13 +38,17 @@ drivetrain Drivetrain =
     drivetrain(LeftDriveSmart, RightDriveSmart, 319.19, 295, 40, mm, 1);
 
 controller Controller1 = controller(primary);
-distance frontDistance = distance(PORT19);
 brain::lcd screen = vex::brain::lcd();
 vision visionSensor = vision(PORT10);
 triport Threewireport = triport(PORT22);
 limit switch_sensor = limit(Threewireport.A);
 inertial inertial_sensor = inertial(PORT16);
-gps gps_sensor = gps(PORT18);
+
+motor FlywheelA = motor(PORT7, ratio18_1, false);
+motor FlywheelB = motor(PORT8, ratio18_1, true);
+motor_group Flywheel = motor_group(FlywheelA, FlywheelB);
+motor Armmotor = motor(PORT9, ratio18_1, false);
+
 
 
 
@@ -69,6 +73,7 @@ float rw = 140;
 float wheeldiam = 101.6;
 float dtheta = 0;
 int stop = 0;
+int armUp = 0;
 
 struct {
   int X = 0;
@@ -112,6 +117,30 @@ void pre_auton(void) {
 }
 
 
+void flywheel(int speed)
+{
+  if (armUp == 0)
+  {
+    Armmotor.setVelocity(100, pct);
+    Armmotor.spinFor(directionType::fwd, 3.2 * 360, rotationUnits::deg);
+    armUp = 1;
+  }
+  Flywheel.spin(vex::directionType::rev, speed, vex::velocityUnits::pct);
+}
+
+
+//function to stop the flywheel and take the arm down
+void Stopflywheel()
+{
+  Flywheel.stop();
+  if (armUp == 1)
+  {
+    Armmotor.spinFor(directionType::fwd, -2.8 * 360, rotationUnits::deg);
+    armUp = 0;
+  }
+
+  Armmotor.setBrake(brakeType::hold);
+}
 
 
 /*---------------------------------------------------------------------------*/
@@ -145,14 +174,12 @@ void usercontrol(void) {
   Drivetrain.setDriveVelocity(50, pct);
   Drivetrain.setTurnVelocity(25, pct);
   inertial_sensor.calibrate();
-  gps_sensor.calibrate();
+ 
 
   while (inertial_sensor.isCalibrating()) {
     wait(50, msec);
   }
-  while (gps_sensor.isCalibrating()) {
-    wait(50, msec);
-  }
+
 
   rightFrontMotor.setPosition(0, deg);
   leftFrontMotor.setPosition(0, deg);
@@ -181,6 +208,10 @@ void usercontrol(void) {
       auto_face_greentriball(visionSensor);
     }
 
+  Controller1.ButtonX.pressed([]()
+                                { flywheel(100); });
+  Controller1.ButtonY.pressed([]()
+                                { Stopflywheel(); });
 
 
     /*************************************************************************/
@@ -201,9 +232,7 @@ void usercontrol(void) {
     /*                              Drivetrain                               */
     /*************************************************************************/
     obstacle_distance = 100000;
-    if (frontDistance.isObjectDetected()) {
-      obstacle_distance = frontDistance.objectDistance(mm);
-    }
+   
 
     if (obstacle_distance > 150 || Controller1.Axis1.position() < 0) {
       RightDriveSmart.spin(vex::directionType::fwd,
@@ -234,9 +263,7 @@ void usercontrol(void) {
     screen.printAt(10, 60, "Reverse Control: %d", reverserControl);
     screen.printAt(10, 90, "Inertial Sensor heading: %f",
                    inertial_sensor.heading(degrees));
-    screen.printAt(10, 120, "GPS X:%lf Y:%lf", gps_sensor.xPosition(mm),
-                   gps_sensor.yPosition(mm));
-    screen.printAt(10, 150, "GPS Quality: %lf", gps_sensor.quality());
+    
     
     stop = 1;
 
