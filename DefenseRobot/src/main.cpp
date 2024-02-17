@@ -116,13 +116,13 @@ void armControlFunction()
   Armmotor.setVelocity(100, pct);
   if (armUp == 0)
   {
-    Armmotor.spinFor(directionType::fwd, 2.8 * 360, rotationUnits::deg);
+    Armmotor.spinFor(directionType::fwd, 3.5 * 360, rotationUnits::deg);
     armUp = 1;
   }
 
   else if (armUp == 1)
   {
-    Armmotor.spinFor(directionType::fwd, -2.8 * 360, rotationUnits::deg);
+    Armmotor.spinFor(directionType::fwd, -3.5 * 360, rotationUnits::deg);
     armUp = 0;
     Armmotor.setBrake(brakeType::hold);
   }
