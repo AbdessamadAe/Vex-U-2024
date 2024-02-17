@@ -48,6 +48,8 @@ motor FlywheelB = motor(PORT5, ratio18_1, true);
 motor_group Flywheel = motor_group(FlywheelA, FlywheelB);
 motor Armmotor = motor(PORT8, ratio18_1, false);
 
+motor wingmotor = motor(PORT11, ratio18_1, false);
+
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
 /*                             Global Variables                              */
@@ -70,6 +72,7 @@ float dtheta = 0;
 int stop = 0;
 int armUp = 0;
 int flywheelOn = 0;
+int WingExtended = 0;
 
 struct
 {
@@ -136,6 +139,27 @@ void flywheel(int speed)
   {
     Flywheel.stop(vex::brakeType::brake);
     flywheelOn = 0;
+  }
+}
+
+/*---------------------------Wing Function-------------------------------*/
+
+void wingFunction()
+{
+  
+  if (WingExtended == 0)
+  {
+    wingmotor.setVelocity(50, pct);
+    wingmotor.spinFor(directionType::fwd, 210, rotationUnits::deg);
+    WingExtended = 1;
+  }
+
+  else if (WingExtended == 1)
+  {
+    wingmotor.setVelocity(20, pct);
+    wingmotor.spinFor(directionType::fwd, -210, rotationUnits::deg);
+    WingExtended = 0;
+    wingmotor.setBrake(brakeType::hold);
   }
 }
 
@@ -210,6 +234,8 @@ void usercontrol(void)
                                 { armControlFunction(); });
     Controller1.ButtonY.pressed([]()
                                 { flywheel(100); });
+    Controller1.ButtonA.pressed([]()
+                                { wingFunction(); });
 
     /*************************************************************************/
     /*                              Drivetrain                               */
