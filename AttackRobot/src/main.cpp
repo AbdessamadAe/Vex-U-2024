@@ -17,140 +17,163 @@ using namespace vex;
 
 // A global instance of competition
 competition Competition;
-int GEAR_RATIO = 3; //84/48;
+int GEAR_RATIO = 3; // 84/48;
 float WHEEL_DIAMETER = 101.6;
-float WHEEL_CIRCUMFERENCE = (WHEEL_DIAMETER/2) * M_PI;
+float WHEEL_CIRCUMFERENCE = (WHEEL_DIAMETER / 2) * M_PI;
 float TURN_ANGLE_MOTOR_RATIO = 5.4;
 
 // define your global instances of motors and other devices here
-motor leftMotorA = motor(PORT10, ratio18_1, false);
-motor leftMotorB = motor(PORT20, ratio18_1, false);
-motor rightMotorA = motor(PORT1, ratio18_1, true);
-motor rightMotorB = motor(PORT11, ratio18_1, true);
+motor leftMotorA = motor(PORT9, ratio18_1, false);
+motor leftMotorB = motor(PORT1, ratio18_1, false);
+motor rightMotorA = motor(PORT12, ratio18_1, true);
+motor rightMotorB = motor(PORT2, ratio18_1, true);
 motor_group LeftDriveSmart = motor_group(leftMotorA, leftMotorB);
 motor_group RightDriveSmart = motor_group(rightMotorA, rightMotorB);
 drivetrain Drivetrain = drivetrain(LeftDriveSmart, RightDriveSmart, WHEEL_CIRCUMFERENCE, 390, 315, mm, GEAR_RATIO);
 controller Controller2 = controller(primary);
-motor FlywheelA = motor(PORT7, ratio18_1, false);
-motor FlywheelB = motor(PORT8, ratio18_1, true);
-motor_group Flywheel = motor_group(FlywheelA, FlywheelB);
-motor Armmotor = motor(PORT9, ratio18_1, false);
+motor intakeMotorA = motor(PORT10, ratio18_1, false);
+motor intakeMotorB = motor(PORT20, ratio18_1, true);
+motor_group intake = motor_group(intakeMotorA, intakeMotorB);
+motor shieldMotor = motor(PORT11, ratio18_1, false);
 
-int armUp = 0;
+int shiledUp = 0;
+int reverserControl = 0;
 
 /*---------------------------------------------------------------------------*/
-/*                                Flywheel Function                           */
+/*                                Intake Function                           */
 
+void intakeGrabe()
+{
+  intake.spin(vex::directionType::fwd, 100, vex::velocityUnits::pct);
+}
+
+void intakeReverse()
+{
+  intake.spin(vex::directionType::fwd, -100, vex::velocityUnits::pct);
+}
+
+void stopIntake()
+{
+  intake.stop();
+}
 
 /*---------------------------------------------------------------------------*/
 /*                            Autonomous Functions                           */
 
-
-
-
-//elementary autonoumous movements 
+// elementary autonoumous movements
 
 //========================================================================================
 //========================================================================================
 
-//move toward desired location using drivetrain initialized with hyperparametrs through testing
-void moveRobot(float distance, int timout=5)
+// move toward desired location using drivetrain initialized with hyperparametrs through testing
+void moveRobot(float distance, int timout = 5)
 {
-  
-   Drivetrain.setTimeout(timout, sec);
-   Drivetrain.driveFor(-distance, mm);
+
+  Drivetrain.setTimeout(timout, sec);
+  Drivetrain.driveFor(-distance, mm);
 }
 
-
-//function to make robot turn toward angle in degree, use a hyperparameter that has been found by testing 
-//this funtion use only one set (Right or Left) of motors to turn the robot 
-//Good for not making the ball spli but bad for speed, very slow 
-//the reverse parameter is set to false to make the robot turn while going forward, true while going backward
-//TO DO: add a timout similar to the moveForward timeout
-void turnRobotToAngle1D(float angle, bool reverse=false)
+// function to make robot turn toward angle in degree, use a hyperparameter that has been found by testing
+// this funtion use only one set (Right or Left) of motors to turn the robot
+// Good for not making the ball spli but bad for speed, very slow
+// the reverse parameter is set to false to make the robot turn while going forward, true while going backward
+// TO DO: add a timout similar to the moveForward timeout
+void turnRobotToAngle1D(float angle, bool reverse = false)
 {
-  if(!reverse){
-    if (angle < 0)
-    {
-      RightDriveSmart.spinFor(TURN_ANGLE_MOTOR_RATIO * angle, deg);
-    }
-    else
-    {
-      LeftDriveSmart.spinFor(-TURN_ANGLE_MOTOR_RATIO * angle, deg);
-    }
-  }
-  else{
-    if (angle < 0)
-    {
-      LeftDriveSmart.spinFor(-TURN_ANGLE_MOTOR_RATIO * angle, deg);
-    }
-    else
-    {
-      RightDriveSmart.spinFor(TURN_ANGLE_MOTOR_RATIO * angle, deg);
-    }
-  }
-  
-}
-
-
-//function tha uses both the righ and left mototors to make a turn
-//good speed but bad ball control 
-
-//TO DO: add a timout similar to the moveForward timeout
-void turnRobotToAngle2D(float angle, bool reverse=false)
-{
-  if (angle < 0)
+  if (!reverse)
   {
-    RightDriveSmart.spinFor(TURN_ANGLE_MOTOR_RATIO/2 * angle, deg);
-    LeftDriveSmart.spinFor(-TURN_ANGLE_MOTOR_RATIO/2 * angle, deg);
+    if (angle < 0)
+    {
+      RightDriveSmart.spinFor(TURN_ANGLE_MOTOR_RATIO * angle, deg);
+    }
+    else
+    {
+      LeftDriveSmart.spinFor(-TURN_ANGLE_MOTOR_RATIO * angle, deg);
+    }
   }
   else
   {
-    LeftDriveSmart.spinFor(-TURN_ANGLE_MOTOR_RATIO/2 * angle, deg);
-    RightDriveSmart.spinFor(TURN_ANGLE_MOTOR_RATIO/2 * angle, deg);
+    if (angle < 0)
+    {
+      LeftDriveSmart.spinFor(-TURN_ANGLE_MOTOR_RATIO * angle, deg);
+    }
+    else
+    {
+      RightDriveSmart.spinFor(TURN_ANGLE_MOTOR_RATIO * angle, deg);
+    }
   }
 }
 
+// function tha uses both the righ and left mototors to make a turn
+// good speed but bad ball control
 
-//function to both move toward and turn an angle
+// TO DO: add a timout similar to the moveForward timeout
+void turnRobotToAngle2D(float angle, bool reverse = false)
+{
+  if (angle < 0)
+  {
+    RightDriveSmart.spinFor(TURN_ANGLE_MOTOR_RATIO / 2 * angle, deg);
+    LeftDriveSmart.spinFor(-TURN_ANGLE_MOTOR_RATIO / 2 * angle, deg);
+  }
+  else
+  {
+    LeftDriveSmart.spinFor(-TURN_ANGLE_MOTOR_RATIO / 2 * angle, deg);
+    RightDriveSmart.spinFor(TURN_ANGLE_MOTOR_RATIO / 2 * angle, deg);
+  }
+}
+
+// function to both move toward and turn an angle
 void moveAndTurn(float distance, float angle)
 {
   moveRobot(distance);
   turnRobotToAngle2D(angle);
 }
 
-
-//function to activate the arm and start the flywheel rotation, take speed of flywheel as argument
-void flywheel(int speed)
+// function to activate the shield
+void shieldControlFunction()
 {
-  if (armUp == 0)
+  shieldMotor.setVelocity(100, pct);
+  if (shiledUp == 0)
   {
-    Armmotor.setVelocity(100, pct);
-    Armmotor.spinFor(directionType::fwd, 3.2 * 360, rotationUnits::deg);
-    armUp = 1;
-  }
-  Flywheel.spin(vex::directionType::rev, speed, vex::velocityUnits::pct);
-}
-
-
-//function to stop the flywheel and take the arm down
-void Stopflywheel()
-{
-  Flywheel.stop();
-  if (armUp == 1)
-  {
-    Armmotor.spinFor(directionType::fwd, -3.1 * 360, rotationUnits::deg);
-    armUp = 0;
+    shieldMotor.spinFor(directionType::fwd, 100, rotationUnits::deg);
+    shiledUp = 1;
   }
 
-  Armmotor.setBrake(brakeType::hold);
+  else if (shiledUp == 1)
+  {
+    shieldMotor.spinFor(directionType::fwd, -100, rotationUnits::deg);
+    shiledUp = 0;
+    shieldMotor.setBrake(brakeType::hold);
+  }
 }
 
-//===============================================================================================
-//================================================================================================
+float get_speed_direction(const char *side)
+{
+  if (reverserControl)
+  {
+    if (strcmp(side, "right"))
+    {
+      return -Controller2.Axis3.position() + Controller2.Axis1.position();
+    }
 
+    if (strcmp(side, "left"))
+    {
+      return -Controller2.Axis3.position() - Controller2.Axis1.position();
+    }
+  }
 
+  if (strcmp(side, "right"))
+  {
+    return -Controller2.Axis3.position() - Controller2.Axis1.position();
+  }
 
+  if (strcmp(side, "left"))
+  {
+    return Controller2.Axis1.position() - Controller2.Axis3.position();
+  }
+
+  return 0;
+}
 
 /*---------------------------------------------------------------------------*/
 /*                          Pre-Autonomous Functions                         */
@@ -192,30 +215,30 @@ void autonomous(void)
   rightMotorA.setPosition(0, deg);
   leftMotorA.setPosition(0, deg);
 
-  //forward 600
-      moveRobot(600);
-      //turn 90 with reverse
-      turnRobotToAngle1D(60, false);
-      //move forward 100
-      Drivetrain.setDriveVelocity(150, pct);
-      moveRobot(500, 2);
+  // forward 600
+  moveRobot(600);
+  // turn 90 with reverse
+  turnRobotToAngle1D(60, false);
+  // move forward 100
+  Drivetrain.setDriveVelocity(150, pct);
+  moveRobot(500, 2);
 
-      turnRobotToAngle1D(30);
-      moveRobot(50, 2);
-      Drivetrain.setDriveVelocity(70, pct);
-      moveRobot(-250, 2);
+  turnRobotToAngle1D(30);
+  moveRobot(50, 2);
+  Drivetrain.setDriveVelocity(70, pct);
+  moveRobot(-250, 2);
 
-      Drivetrain.setDriveVelocity(200, pct);
-      moveRobot(300, 2);
+  Drivetrain.setDriveVelocity(200, pct);
+  moveRobot(300, 2);
 
-      Drivetrain.setDriveVelocity(100, pct);
-      moveRobot(-120);
-      turnRobotToAngle1D(-65, true);
-      
-      moveRobot(-350);
-      turnRobotToAngle1D(-45, true);
-      turnRobotToAngle1D(6);
-      moveRobot(-3700);
+  Drivetrain.setDriveVelocity(100, pct);
+  moveRobot(-120);
+  turnRobotToAngle1D(-65, true);
+
+  moveRobot(-350);
+  turnRobotToAngle1D(-45, true);
+  turnRobotToAngle1D(6);
+  moveRobot(-3700);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -245,9 +268,13 @@ void usercontrol(void)
     // ........................................................................
     // Insert user code here. This is where you use the joystick values to
     // update your motors, etc.
-    RightDriveSmart.spin(vex::directionType::fwd, Controller2.Axis3.position() + Controller2.Axis1.position(), pct);
-    LeftDriveSmart.spin(vex::directionType::fwd, Controller2.Axis3.position() - Controller2.Axis1.position(), pct);
     // ........................................................................
+
+    RightDriveSmart.spin(vex::directionType::fwd,
+                         get_speed_direction("right"),
+                         vex::velocityUnits::pct);
+    LeftDriveSmart.spin(vex::directionType::fwd, get_speed_direction("left"),
+                        vex::velocityUnits::pct);
 
     // Field dimensions: 3657.6mm x 3657.6mm
 
@@ -255,9 +282,20 @@ void usercontrol(void)
     /*                             Flyweel Control                               */
 
     Controller2.ButtonX.pressed([]()
-                                { flywheel(100); });
-    Controller2.ButtonY.pressed([]()
-                                { Stopflywheel(); });
+                                { shieldControlFunction(); });
+
+    if (Controller2.ButtonR1.pressing())
+    {
+      intakeGrabe();
+    }
+    else if (Controller2.ButtonL1.pressing())
+    {
+      intakeReverse();
+    }
+    else
+    {
+      stopIntake();
+    }
 
     /* track_location();
 
@@ -269,7 +307,6 @@ void usercontrol(void)
     if (Controller2.ButtonB.pressing())
     {
       autonomous();
-      
     }
 
     wait(20, msec); // Sleep the task for a short amount of time to
@@ -295,13 +332,6 @@ int main()
     wait(100, msec);
   }
 }
-
-
-
-
-
-
-
 
 /****************************************************************************/
 /*                             DO NOT DELETE                                */
@@ -351,16 +381,16 @@ void gps_drive_test() {
     if (gps_sensor.yPosition(mm) > y_target-0.05 || gps_sensor.yPosition(mm) < y_target+0.05) {
       return;
     }
-    
+
     drive_to_with_gps(x_target, y_target);
   }
-  
+
 }
 */
 
-  // if (Controller1.ButtonB.pressing()) {
-  //   gps_drive_test();
-  // }
+// if (Controller1.ButtonB.pressing()) {
+//   gps_drive_test();
+// }
 
 /****************************************************************************/
 /*                                                                          */
@@ -370,12 +400,7 @@ void gps_drive_test() {
 /*                                                                          */
 /****************************************************************************/
 
-
-
-
-
-
-//unused functions ==============================================================================
+// unused functions ==============================================================================
 int current_motor_angle_left = 0;
 int current_motor_angle_right = 0;
 float d = 0;
