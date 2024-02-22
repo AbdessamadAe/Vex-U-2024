@@ -23,18 +23,22 @@ using namespace vex;
 /*---------------------------------------------------------------------------*/
 // A global instance of competition
 competition Competition;
+int GEAR_RATIO = 2.9; // 84/48;
+float WHEEL_DIAMETER = 101.6;
+float WHEEL_CIRCUMFERENCE = (WHEEL_DIAMETER / 2) * M_PI;
+float TURN_ANGLE_MOTOR_RATIO = 5.4;
+
 
 // define your global instances of motors and other devices here
-motor leftFrontMotor = motor(PORT3, ratio18_1, true);
-motor leftBackMotor = motor(PORT12, ratio18_1, true);
+motor leftFrontMotor = motor(PORT3, ratio18_1, false);
+motor leftBackMotor = motor(PORT12, ratio18_1, false);
 motor_group LeftDriveSmart = motor_group(leftFrontMotor, leftBackMotor);
-
 motor rightFrontMotor = motor(PORT10, ratio18_1, true);
 motor rightBackMotor = motor(PORT13, ratio18_1, true);
 motor_group RightDriveSmart = motor_group(rightFrontMotor, rightBackMotor);
 
-drivetrain Drivetrain =
-    drivetrain(LeftDriveSmart, RightDriveSmart, 319.19, 295, 40, mm, 1);
+//track width = 260, wheel base = 170
+drivetrain Drivetrain = drivetrain(LeftDriveSmart, RightDriveSmart, WHEEL_CIRCUMFERENCE, 260, 170, mm, GEAR_RATIO);
 
 controller Controller1 = controller(primary);
 brain::lcd screen = vex::brain::lcd();
@@ -163,6 +167,65 @@ void wingFunction()
   }
 }
 
+
+//autonomous functions
+// move toward desired location using drivetrain initialized with hyperparametrs through testing
+void moveRobot(float distance, int timout = 10)
+{
+
+  Drivetrain.setTimeout(timout, sec);
+  Drivetrain.driveFor(-distance, mm);
+}
+
+// function to make robot turn toward angle in degree, use a hyperparameter that has been found by testing
+// this funtion use only one set (Right or Left) of motors to turn the robot
+// Good for not making the ball spli but bad for speed, very slow
+// the reverse parameter is set to false to make the robot turn while going forward, true while going backward
+// TO DO: add a timout similar to the moveForward timeout
+void turnRobotToAngle1D(float angle, bool reverse = false)
+{
+  if (!reverse)
+  {
+    if (angle < 0)
+    {
+      RightDriveSmart.spinFor(TURN_ANGLE_MOTOR_RATIO * angle, deg);
+    }
+    else
+    {
+      LeftDriveSmart.spinFor(-TURN_ANGLE_MOTOR_RATIO * angle, deg);
+    }
+  }
+  else
+  {
+    if (angle < 0)
+    {
+      LeftDriveSmart.spinFor(-TURN_ANGLE_MOTOR_RATIO * angle, deg);
+    }
+    else
+    {
+      RightDriveSmart.spinFor(TURN_ANGLE_MOTOR_RATIO * angle, deg);
+    }
+  }
+}
+
+// function tha uses both the righ and left mototors to make a turn
+// good speed but bad ball control
+
+// TO DO: add a timout similar to the moveForward timeout
+void turnRobotToAngle2D(float angle, bool reverse = false)
+{
+  if (angle < 0)
+  {
+    RightDriveSmart.spinFor(TURN_ANGLE_MOTOR_RATIO / 2 * angle, deg);
+    LeftDriveSmart.spinFor(-TURN_ANGLE_MOTOR_RATIO / 2 * angle, deg);
+  }
+  else
+  {
+    LeftDriveSmart.spinFor(-TURN_ANGLE_MOTOR_RATIO / 2 * angle, deg);
+    RightDriveSmart.spinFor(TURN_ANGLE_MOTOR_RATIO / 2 * angle, deg);
+  }
+}
+
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
 /*                             Autonomous Phase                              */
@@ -171,12 +234,8 @@ void wingFunction()
 /*---------------------------------------------------------------------------*/
 void autonomous(void)
 {
-  // Insert autonomous user code here.
-  Drivetrain.setDriveVelocity(25, pct);
-  Drivetrain.setTurnVelocity(25, pct);
-  Drivetrain.driveFor(500, mm, true);
-  Drivetrain.turnFor(50, rotationUnits::deg);
-
+  
+  moveRobot(400);
   // drivetrain code to be tested
 }
 
@@ -220,15 +279,6 @@ void usercontrol(void)
       switch_control_direction(&controllerStartTimer);
     }
 
-    if (Controller1.ButtonL1.pressing())
-    {
-      face_angle_smooth();
-    }
-
-    if (Controller1.ButtonL2.pressing())
-    {
-      auto_face_greentriball(visionSensor);
-    }
 
     Controller1.ButtonX.pressed([]()
                                 { armControlFunction(); });
@@ -299,6 +349,16 @@ int main()
     wait(100, msec);
   }
 } // End of the Main function
+
+
+
+
+
+
+
+
+
+
 
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
@@ -408,23 +468,23 @@ float get_speed_direction(const char *side)
   {
     if (strcmp(side, "right"))
     {
-      return -Controller1.Axis1.position() - Controller1.Axis3.position();
+      return -Controller1.Axis3.position() - Controller1.Axis1.position();
     }
 
     if (strcmp(side, "left"))
     {
-      return -Controller1.Axis1.position() + Controller1.Axis3.position();
+      return -Controller1.Axis3.position() + Controller1.Axis1.position();
     }
   }
 
   if (strcmp(side, "right"))
   {
-    return -Controller1.Axis1.position() + Controller1.Axis3.position();
+    return -Controller1.Axis3.position() + Controller1.Axis1.position();
   }
 
   if (strcmp(side, "left"))
   {
-    return - Controller1.Axis3.position() - Controller1.Axis1.position();
+    return -Controller1.Axis3.position() - Controller1.Axis1.position();
   }
 
   return 0;
