@@ -36,7 +36,13 @@ motor intakeMotorB = motor(PORT20, ratio18_1, true);
 motor_group intake = motor_group(intakeMotorA, intakeMotorB);
 motor shieldMotor = motor(PORT11, ratio18_1, false);
 
+motor wingmotorA = motor(PORT15, ratio18_1, false);
+motor wingmotorB = motor(PORT16, ratio18_1, false);
+motor_group wingmotors = motor_group(wingmotorA, wingmotorB);
+
+
 int shiledUp = 0;
+int WingsExtended = 0;
 int reverserControl = 0;
 
 /*---------------------------------------------------------------------------*/
@@ -132,18 +138,39 @@ void moveAndTurn(float distance, float angle)
 // function to activate the shield
 void shieldControlFunction()
 {
-  shieldMotor.setVelocity(100, pct);
   if (shiledUp == 0)
   {
-    shieldMotor.spinFor(directionType::fwd, 100, rotationUnits::deg);
+    shieldMotor.setVelocity(200, pct);
+    shieldMotor.spinFor(directionType::fwd, 130, rotationUnits::deg);
     shiledUp = 1;
   }
 
   else if (shiledUp == 1)
-  {
-    shieldMotor.spinFor(directionType::fwd, -100, rotationUnits::deg);
+  { 
+    shieldMotor.setVelocity(50, pct);
+    shieldMotor.spinFor(directionType::fwd, -130, rotationUnits::deg);
     shiledUp = 0;
     shieldMotor.setBrake(brakeType::hold);
+  }
+}
+
+void wingsFunction()
+{
+  
+  if (WingsExtended == 0)
+  {
+    wingmotors.setVelocity(20, pct);
+    wingmotors.spinFor(directionType::fwd, -145, rotationUnits::deg);
+    WingsExtended = 1;
+  }
+
+  else if (WingsExtended == 1)
+  {
+    wingmotors.setVelocity(20, pct);
+    wingmotors.spinFor(directionType::fwd, 145, rotationUnits::deg);
+    WingsExtended = 0;
+    wingmotorA.setBrake(brakeType::hold);
+    wingmotorB.setBrake(brakeType::hold);
   }
 }
 
@@ -284,6 +311,9 @@ void usercontrol(void)
     Controller2.ButtonX.pressed([]()
                                 { shieldControlFunction(); });
 
+    Controller2.ButtonA.pressed([]()
+                                { wingsFunction(); });
+
     if (Controller2.ButtonR1.pressing())
     {
       intakeGrabe();
@@ -304,7 +334,7 @@ void usercontrol(void)
 
     /*---------------------------------------------------------------------------*/
     /*                             Test Autonomous                             */
-    if (Controller2.ButtonB.pressing())
+    if (Controller2.ButtonL2.pressing())
     {
       autonomous();
     }
