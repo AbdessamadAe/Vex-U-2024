@@ -468,23 +468,23 @@ float get_speed_direction(const char *side)
   {
     if (strcmp(side, "right"))
     {
-      return -Controller1.Axis3.position() - Controller1.Axis1.position();
+      return -Controller1.Axis3.position() + Controller1.Axis1.position();
     }
 
     if (strcmp(side, "left"))
     {
-      return -Controller1.Axis3.position() + Controller1.Axis1.position();
+      return -Controller1.Axis3.position() - Controller1.Axis1.position();
     }
   }
 
   if (strcmp(side, "right"))
   {
-    return -Controller1.Axis3.position() + Controller1.Axis1.position();
+    return Controller1.Axis3.position() + Controller1.Axis1.position();
   }
 
   if (strcmp(side, "left"))
   {
-    return -Controller1.Axis3.position() - Controller1.Axis1.position();
+    return Controller1.Axis3.position() - Controller1.Axis1.position();
   }
 
   return 0;
