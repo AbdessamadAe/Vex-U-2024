@@ -43,7 +43,9 @@ motor_group wingmotors = motor_group(wingmotorA, wingmotorB);
 
 int shiledUp = 0;
 int WingsExtended = 0;
-int reverserControl = 0;
+bool reverserControl = false;
+time_t controllerStartTimer = time(NULL);
+
 
 /*---------------------------------------------------------------------------*/
 /*                                Intake Function                           */
@@ -180,12 +182,12 @@ float get_speed_direction(const char *side)
   {
     if (strcmp(side, "right"))
     {
-      return -Controller2.Axis3.position() + Controller2.Axis1.position();
+      return Controller2.Axis3.position() - Controller2.Axis1.position();
     }
 
     if (strcmp(side, "left"))
     {
-      return -Controller2.Axis3.position() - Controller2.Axis1.position();
+      return Controller2.Axis3.position() + Controller2.Axis1.position();
     }
   }
 
@@ -196,10 +198,29 @@ float get_speed_direction(const char *side)
 
   if (strcmp(side, "left"))
   {
-    return Controller2.Axis1.position() - Controller2.Axis3.position();
+    return -Controller2.Axis3.position() + Controller2.Axis1.position();
   }
 
   return 0;
+}
+
+void switch_control_direction(time_t *controllerStartTimer)
+{
+  time_t currentTime = time(NULL);
+  if (difftime(currentTime, *controllerStartTimer) < 1)
+  {
+    return;
+  }
+  *controllerStartTimer = time(NULL);
+
+  if (reverserControl)
+  {
+    reverserControl = false;
+  }
+  else
+  {
+    reverserControl = true;
+  }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -327,6 +348,11 @@ void usercontrol(void)
       stopIntake();
     }
 
+    if (Controller2.ButtonR2.pressing())
+    {
+      switch_control_direction(&controllerStartTimer);
+    }
+
     /* track_location();
 
     current_motor_angle_left = leftMotorA.position(deg);
@@ -418,7 +444,7 @@ void gps_drive_test() {
 }
 */
 
-// if (Controller1.ButtonB.pressing()) {
+// if (Controller2.ButtonB.pressing()) {
 //   gps_drive_test();
 // }
 
