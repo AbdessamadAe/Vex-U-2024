@@ -23,10 +23,11 @@ using namespace vex;
 /*---------------------------------------------------------------------------*/
 // A global instance of competition
 competition Competition;
-int GEAR_RATIO = 2.9; // 84/48;
+float GEAR_RATIO = 2.9; // 84/48;
 float WHEEL_DIAMETER = 101.6;
-float WHEEL_CIRCUMFERENCE = (WHEEL_DIAMETER / 2) * M_PI;
+float WHEEL_CIRCUMFERENCE = WHEEL_DIAMETER * M_PI;
 float TURN_ANGLE_MOTOR_RATIO = 5.4;
+
 
 
 // define your global instances of motors and other devices here
@@ -109,8 +110,10 @@ void pre_auton(void)
 {
   // DO NOT REMOVE! Initializing Robot Configuration.
   vexcodeInit();
-  // All activities that occur before the competition starts
-  // Example: clearing encoders, setting servo positions, ...
+
+  RightDriveSmart.setStopping(hold);
+  LeftDriveSmart.setStopping(hold);
+  
 
   return;
 }
@@ -136,12 +139,12 @@ void flywheel(int speed)
 {
   if (flywheelOn == 0)
   {
-    Flywheel.spin(vex::directionType::fwd, speed, vex::velocityUnits::pct);
+    FlywheelA.spin(vex::directionType::fwd, speed, vex::velocityUnits::pct);
     flywheelOn = 1;
   }
   else if (flywheelOn == 1)
   {
-    Flywheel.stop(vex::brakeType::brake);
+    FlywheelA.stop(vex::brakeType::brake);
     flywheelOn = 0;
   }
 }
@@ -168,62 +171,45 @@ void wingFunction()
 }
 
 
-//autonomous functions
-// move toward desired location using drivetrain initialized with hyperparametrs through testing
-void moveRobot(float distance, int timout = 10)
-{
-
-  Drivetrain.setTimeout(timout, sec);
-  Drivetrain.driveFor(-distance, mm);
+//mm to degrees
+float mm_to_deg(int distance_mm){
+    float rev = distance_mm / WHEEL_CIRCUMFERENCE;
+    return  rev * 360;
 }
 
-// function to make robot turn toward angle in degree, use a hyperparameter that has been found by testing
-// this funtion use only one set (Right or Left) of motors to turn the robot
-// Good for not making the ball spli but bad for speed, very slow
-// the reverse parameter is set to false to make the robot turn while going forward, true while going backward
-// TO DO: add a timout similar to the moveForward timeout
-void turnRobotToAngle1D(float angle, bool reverse = false)
-{
-  if (!reverse)
-  {
-    if (angle < 0)
-    {
-      RightDriveSmart.spinFor(TURN_ANGLE_MOTOR_RATIO * angle, deg);
-    }
-    else
-    {
-      LeftDriveSmart.spinFor(-TURN_ANGLE_MOTOR_RATIO * angle, deg);
-    }
-  }
-  else
-  {
-    if (angle < 0)
-    {
-      LeftDriveSmart.spinFor(-TURN_ANGLE_MOTOR_RATIO * angle, deg);
-    }
-    else
-    {
-      RightDriveSmart.spinFor(TURN_ANGLE_MOTOR_RATIO * angle, deg);
-    }
-  }
+void moveForward(int distance_mm, int speed=200){
+
+    RightDriveSmart.resetPosition();
+    LeftDriveSmart.resetPosition();
+
+    float dist_deg = mm_to_deg(distance_mm);
+
+    RightDriveSmart.spinTo(dist_deg, deg, speed, rpm, false);
+    LeftDriveSmart.spinTo(dist_deg, deg, speed, rpm, true);
 }
 
-// function tha uses both the righ and left mototors to make a turn
-// good speed but bad ball control
+void turn_angle_2D(int angle, int speed=200){
+    RightDriveSmart.resetPosition();
+    LeftDriveSmart.resetPosition();
 
-// TO DO: add a timout similar to the moveForward timeout
-void turnRobotToAngle2D(float angle, bool reverse = false)
-{
-  if (angle < 0)
-  {
-    RightDriveSmart.spinFor(TURN_ANGLE_MOTOR_RATIO / 2 * angle, deg);
-    LeftDriveSmart.spinFor(-TURN_ANGLE_MOTOR_RATIO / 2 * angle, deg);
-  }
-  else
-  {
-    LeftDriveSmart.spinFor(-TURN_ANGLE_MOTOR_RATIO / 2 * angle, deg);
-    RightDriveSmart.spinFor(TURN_ANGLE_MOTOR_RATIO / 2 * angle, deg);
-  }
+      float deg_angle = angle * 2.57;
+      LeftDriveSmart.spinTo(deg_angle,  deg, speed, rpm, false);
+      RightDriveSmart.spinTo(-deg_angle,  deg, speed, rpm);
+}
+
+void turn_angle_1D(int angle, int speed=200){
+    RightDriveSmart.resetPosition();
+    LeftDriveSmart.resetPosition();
+
+      float deg_angle = angle * 2.57;
+      if (angle > 0){
+        LeftDriveSmart.spinTo(deg_angle*2,  deg, speed, rpm);
+      }
+      else {
+        RightDriveSmart.spinTo(deg_angle*2,  deg, speed, rpm);
+      }
+      
+      RightDriveSmart.spinTo(-deg_angle,  deg, 50, rpm);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -235,7 +221,24 @@ void turnRobotToAngle2D(float angle, bool reverse = false)
 void autonomous(void)
 {
   
-  moveRobot(400);
+  //moveRobot(400);
+  // moveForward(400, 50);
+  // wait(1, sec);
+  // moveForward(-400, 100);
+  // wait(2, sec);
+  // turn_angle_2D(180);
+  // wait(2, sec);
+  // turn_angle_2D(-180);
+  // wait(2, sec);
+  // turn_angle_2D(90);
+  // wait(2, sec);
+  turn_angle_1D(180);
+  wait(1, sec);
+  turn_angle_1D(-180);
+  wait(1, sec);
+  turn_angle_1D(90);
+  wait(1, sec);
+
   // drivetrain code to be tested
 }
 
