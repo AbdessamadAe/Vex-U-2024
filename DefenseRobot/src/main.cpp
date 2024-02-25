@@ -197,19 +197,29 @@ void turn_angle_2D(int angle, int speed=200){
       RightDriveSmart.spinTo(-deg_angle,  deg, speed, rpm);
 }
 
-void turn_angle_1D(int angle, int speed=200){
+void turn_angle_1D(int angle, int speed=200, bool reverse=false){
     RightDriveSmart.resetPosition();
     LeftDriveSmart.resetPosition();
 
       float deg_angle = angle * 2.57;
-      if (angle > 0){
-        LeftDriveSmart.spinTo(deg_angle*2,  deg, speed, rpm);
+
+      if(reverse){
+          if (angle > 0){
+            LeftDriveSmart.spinTo(-deg_angle*2,  deg, speed, rpm);
+          }
+          else {
+            RightDriveSmart.spinTo(-deg_angle*2,  deg, speed, rpm);
+          }
       }
       else {
-        RightDriveSmart.spinTo(deg_angle*2,  deg, speed, rpm);
+          if (angle > 0){
+            LeftDriveSmart.spinTo(deg_angle*2,  deg, speed, rpm);
+          }
+          else {
+            RightDriveSmart.spinTo(deg_angle*2,  deg, speed, rpm);
+          }
       }
       
-      RightDriveSmart.spinTo(-deg_angle,  deg, 50, rpm);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -220,26 +230,60 @@ void turn_angle_1D(int angle, int speed=200){
 /*---------------------------------------------------------------------------*/
 void autonomous(void)
 {
-  
-  //moveRobot(400);
-  // moveForward(400, 50);
-  // wait(1, sec);
-  // moveForward(-400, 100);
-  // wait(2, sec);
-  // turn_angle_2D(180);
-  // wait(2, sec);
-  // turn_angle_2D(-180);
-  // wait(2, sec);
-  // turn_angle_2D(90);
-  // wait(2, sec);
-  turn_angle_1D(180);
-  wait(1, sec);
-  turn_angle_1D(-180);
-  wait(1, sec);
-  turn_angle_1D(90);
-  wait(1, sec);
+  turn_angle_2D(10);
+  moveForward(1100, 200);
+  wait(0.5, sec);
+  turn_angle_2D(85, 100);
+  wait(0.5, sec);
+  moveForward(400, 200);
+  wait(0.5, sec);
+  moveForward(100, 100);
+  wait(0.5, sec);
 
-  // drivetrain code to be tested
+
+  //checkpoint2: after hitting and aligning with the wall
+
+  //making the robot correctly align with next triball without crssing borders
+  moveForward(-20);
+  turn_angle_2D(-20, 100);
+  moveForward(-100);
+  turn_angle_2D(-30, 100);
+  wait(0.2, sec);
+
+  //go to next corer triball 
+  moveForward(-750);
+  wait(0.2, sec);
+  turn_angle_2D(180, 100);
+  wait(0.2, sec);
+  moveForward(750);
+  wait(0.2, sec);
+  turn_angle_2D(-40);
+  wingFunction();
+  wait(0.2, sec);
+  turn_angle_2D(-120, 100);
+  wait(0.2, sec);
+  wingFunction();
+  moveForward(200);
+
+  //checkpoint 3 moving all balls to our zone
+  wait(0.2, sec);
+  moveForward(400, 150);
+  wait(0.2, sec);
+  moveForward(600, 150);
+
+
+  
+  //arrive at corner
+  // turn_angle_2D(90, 100);
+  // wait(0.2, sec);
+  // moveForward(-200, 150);
+  // wait(0.2, sec);
+  // turn_angle_2D(25, 100);
+  // wingFunction();
+  
+
+  
+  
 }
 
 /*---------------------------------------------------------------------------*/
