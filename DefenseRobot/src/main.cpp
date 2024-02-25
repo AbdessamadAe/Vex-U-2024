@@ -10,7 +10,7 @@
 #include <cmath>
 #include <ctime>
 
-// #include "objectDtection.h"
+#include "objectDtection.h"
 #include "vex.h"
 
 using namespace vex;
@@ -43,7 +43,7 @@ drivetrain Drivetrain = drivetrain(LeftDriveSmart, RightDriveSmart, WHEEL_CIRCUM
 
 controller Controller1 = controller(primary);
 brain::lcd screen = vex::brain::lcd();
-vision visionSensor = vision(PORT10);
+vision visionSensor = vision(PORT7);
 triport Threewireport = triport(PORT22);
 limit switch_sensor = limit(Threewireport.A);
 inertial inertial_sensor = inertial(PORT16);
@@ -222,6 +222,10 @@ void turn_angle_1D(int angle, int speed=200, bool reverse=false){
       
 }
 
+void align_triball(){
+
+}
+
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
 /*                             Autonomous Phase                              */
@@ -255,8 +259,14 @@ void autonomous(void)
   wait(0.2, sec);
   turn_angle_2D(180, 100);
   wait(0.2, sec);
-  moveForward(750);
+  moveForward(350);
   wait(0.2, sec);
+  auto_face_greentriball(visionSensor);
+  wait(0.2, sec);
+  moveForward(300);
+  wait(0.2, sec);
+
+  //try to 
   turn_angle_2D(-40);
   wingFunction();
   wait(0.2, sec);
@@ -476,6 +486,7 @@ void auto_face_greentriball(vision visionSensor)
   if (visionSensor.largestObject.exists)
   {
     int triball_x = visionSensor.largestObject.centerX;
+
     if (triball_x <= (camera_x - error_margin))
     {
       // turn left
@@ -489,17 +500,6 @@ void auto_face_greentriball(vision visionSensor)
       float motor_speed = 25 * (1 - camera_x / triball_x);
       RightDriveSmart.spin(vex::directionType::rev, motor_speed, pct);
       LeftDriveSmart.spin(vex::directionType::fwd, motor_speed, pct);
-    }
-    else if (!switch_sensor.pressing())
-    {
-      RightDriveSmart.spin(fwd, 25, pct);
-      LeftDriveSmart.spin(fwd, 25, pct);
-    }
-    else
-    {
-      // break
-      RightDriveSmart.stop(vex::brakeType::brake);
-      LeftDriveSmart.stop(vex::brakeType::brake);
     }
   }
   return;
