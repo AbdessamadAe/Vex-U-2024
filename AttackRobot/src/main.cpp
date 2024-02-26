@@ -207,7 +207,7 @@ void moveForward(int distance_mm, int speed=200){
     RightDriveSmart.resetPosition();
     LeftDriveSmart.resetPosition();
 
-    float dist_deg = -mm_to_deg(distance_mm) * 0.8; // need to be fine tuned
+    float dist_deg = -mm_to_deg(distance_mm) * 0.67; // need to be fine tuned
 
     RightDriveSmart.spinTo(dist_deg, deg, speed, rpm, false);
     LeftDriveSmart.spinTo(dist_deg, deg, speed, rpm, true);
@@ -247,12 +247,52 @@ void turn_angle_1D(int angle, int speed=200, bool reverse=false){
       
 }
 
+void auto_intake_eject(int rotations=360, bool wait=true, int speed=200){
+  intake.resetPosition();
+  intake.spinTo(-rotations, deg, speed, rpm, wait);
+}
 
+void auto_intake_grab(int rotations=360, bool wait=true, int speed=200){
+  intake.resetPosition();
+  intake.spinTo(rotations, deg, speed, rpm, wait);
+}
 
 
 void autonomous(void)
 {
-  moveForward(400, 50);
+  //getting the red ball into the goal 
+  turn_angle_2D(-45, 50);
+  wait(0.2, sec);
+  moveForward(500, 150);
+  wait(0.2, sec);
+  turn_angle_2D(-45, 50);
+  wait(0.2, sec);
+  moveForward(150, 150);
+  wait(0.2, sec);
+  auto_intake_eject(1500);
+  wait(0.2, sec);
+  moveForward(-180, 150);
+  wait(0.2, sec);
+  auto_intake_eject(500);
+  moveForward(180, 150);
+  wait(0.2, sec);
+  moveForward(-180, 150);
+  wait(0.2, sec);
+  turn_angle_2D(-90, 100);
+  wait(0.2, sec);
+
+  //grabbing the facing green triball 
+  moveForward(400, 150);
+  wait(0.2, sec);
+  turn_angle_2D(30);
+  wait(0.2, sec);
+  auto_intake_grab(2500, false);
+  moveForward(500, 150);
+  wait(0.2, sec);
+  moveForward(250, 100);
+  wait(0.2, sec);
+
+
 }
 
 /*---------------------------------------------------------------------------*/
