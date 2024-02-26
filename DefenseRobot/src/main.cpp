@@ -10,7 +10,7 @@
 #include <cmath>
 #include <ctime>
 
-// #include "objectDtection.h"
+#include "objectDtection.h"
 #include "vex.h"
 
 using namespace vex;
@@ -23,10 +23,11 @@ using namespace vex;
 /*---------------------------------------------------------------------------*/
 // A global instance of competition
 competition Competition;
-int GEAR_RATIO = 2.9; // 84/48;
+float GEAR_RATIO = 2.9; // 84/48;
 float WHEEL_DIAMETER = 101.6;
-float WHEEL_CIRCUMFERENCE = (WHEEL_DIAMETER / 2) * M_PI;
+float WHEEL_CIRCUMFERENCE = WHEEL_DIAMETER * M_PI;
 float TURN_ANGLE_MOTOR_RATIO = 5.4;
+
 
 
 // define your global instances of motors and other devices here
@@ -42,7 +43,7 @@ drivetrain Drivetrain = drivetrain(LeftDriveSmart, RightDriveSmart, WHEEL_CIRCUM
 
 controller Controller1 = controller(primary);
 brain::lcd screen = vex::brain::lcd();
-vision visionSensor = vision(PORT10);
+vision visionSensor = vision(PORT7);
 triport Threewireport = triport(PORT22);
 limit switch_sensor = limit(Threewireport.A);
 inertial inertial_sensor = inertial(PORT16);
@@ -109,8 +110,10 @@ void pre_auton(void)
 {
   // DO NOT REMOVE! Initializing Robot Configuration.
   vexcodeInit();
-  // All activities that occur before the competition starts
-  // Example: clearing encoders, setting servo positions, ...
+
+  RightDriveSmart.setStopping(hold);
+  LeftDriveSmart.setStopping(hold);
+  
 
   return;
 }
@@ -136,12 +139,12 @@ void flywheel(int speed)
 {
   if (flywheelOn == 0)
   {
-    Flywheel.spin(vex::directionType::fwd, speed, vex::velocityUnits::pct);
+    FlywheelA.spin(vex::directionType::fwd, speed, vex::velocityUnits::pct);
     flywheelOn = 1;
   }
   else if (flywheelOn == 1)
   {
-    Flywheel.stop(vex::brakeType::brake);
+    FlywheelA.stop(vex::brakeType::brake);
     flywheelOn = 0;
   }
 }
@@ -168,62 +171,59 @@ void wingFunction()
 }
 
 
-//autonomous functions
-// move toward desired location using drivetrain initialized with hyperparametrs through testing
-void moveRobot(float distance, int timout = 10)
-{
-
-  Drivetrain.setTimeout(timout, sec);
-  Drivetrain.driveFor(-distance, mm);
+//mm to degrees
+float mm_to_deg(int distance_mm){
+    float rev = distance_mm / WHEEL_CIRCUMFERENCE;
+    return  rev * 360;
 }
 
-// function to make robot turn toward angle in degree, use a hyperparameter that has been found by testing
-// this funtion use only one set (Right or Left) of motors to turn the robot
-// Good for not making the ball spli but bad for speed, very slow
-// the reverse parameter is set to false to make the robot turn while going forward, true while going backward
-// TO DO: add a timout similar to the moveForward timeout
-void turnRobotToAngle1D(float angle, bool reverse = false)
-{
-  if (!reverse)
-  {
-    if (angle < 0)
-    {
-      RightDriveSmart.spinFor(TURN_ANGLE_MOTOR_RATIO * angle, deg);
-    }
-    else
-    {
-      LeftDriveSmart.spinFor(-TURN_ANGLE_MOTOR_RATIO * angle, deg);
-    }
-  }
-  else
-  {
-    if (angle < 0)
-    {
-      LeftDriveSmart.spinFor(-TURN_ANGLE_MOTOR_RATIO * angle, deg);
-    }
-    else
-    {
-      RightDriveSmart.spinFor(TURN_ANGLE_MOTOR_RATIO * angle, deg);
-    }
-  }
+void moveForward(int distance_mm, int speed=200){
+
+    RightDriveSmart.resetPosition();
+    LeftDriveSmart.resetPosition();
+
+    float dist_deg = mm_to_deg(distance_mm);
+
+    RightDriveSmart.spinTo(dist_deg, deg, speed, rpm, false);
+    LeftDriveSmart.spinTo(dist_deg, deg, speed, rpm, true);
 }
 
-// function tha uses both the righ and left mototors to make a turn
-// good speed but bad ball control
+void turn_angle_2D(int angle, int speed=200){
+    RightDriveSmart.resetPosition();
+    LeftDriveSmart.resetPosition();
 
-// TO DO: add a timout similar to the moveForward timeout
-void turnRobotToAngle2D(float angle, bool reverse = false)
-{
-  if (angle < 0)
-  {
-    RightDriveSmart.spinFor(TURN_ANGLE_MOTOR_RATIO / 2 * angle, deg);
-    LeftDriveSmart.spinFor(-TURN_ANGLE_MOTOR_RATIO / 2 * angle, deg);
-  }
-  else
-  {
-    LeftDriveSmart.spinFor(-TURN_ANGLE_MOTOR_RATIO / 2 * angle, deg);
-    RightDriveSmart.spinFor(TURN_ANGLE_MOTOR_RATIO / 2 * angle, deg);
-  }
+      float deg_angle = angle * 2.57;
+      LeftDriveSmart.spinTo(deg_angle,  deg, speed, rpm, false);
+      RightDriveSmart.spinTo(-deg_angle,  deg, speed, rpm);
+}
+
+void turn_angle_1D(int angle, int speed=200, bool reverse=false){
+    RightDriveSmart.resetPosition();
+    LeftDriveSmart.resetPosition();
+
+      float deg_angle = angle * 2.57;
+
+      if(reverse){
+          if (angle > 0){
+            LeftDriveSmart.spinTo(-deg_angle*2,  deg, speed, rpm);
+          }
+          else {
+            RightDriveSmart.spinTo(-deg_angle*2,  deg, speed, rpm);
+          }
+      }
+      else {
+          if (angle > 0){
+            LeftDriveSmart.spinTo(deg_angle*2,  deg, speed, rpm);
+          }
+          else {
+            RightDriveSmart.spinTo(deg_angle*2,  deg, speed, rpm);
+          }
+      }
+      
+}
+
+void align_triball(){
+
 }
 
 /*---------------------------------------------------------------------------*/
@@ -234,9 +234,66 @@ void turnRobotToAngle2D(float angle, bool reverse = false)
 /*---------------------------------------------------------------------------*/
 void autonomous(void)
 {
+  turn_angle_2D(10);
+  moveForward(1100, 200);
+  wait(0.5, sec);
+  turn_angle_2D(85, 100);
+  wait(0.5, sec);
+  moveForward(400, 200);
+  wait(0.5, sec);
+  moveForward(100, 100);
+  wait(0.5, sec);
+
+
+  //checkpoint2: after hitting and aligning with the wall
+
+  //making the robot correctly align with next triball without crssing borders
+  moveForward(-20);
+  turn_angle_2D(-20, 100);
+  moveForward(-100);
+  turn_angle_2D(-30, 100);
+  wait(0.2, sec);
+
+  //go to next corer triball 
+  moveForward(-750);
+  wait(0.2, sec);
+  turn_angle_2D(180, 100);
+  wait(0.2, sec);
+  moveForward(350);
+  wait(0.2, sec);
+  auto_face_greentriball(visionSensor);
+  wait(0.2, sec);
+  moveForward(300);
+  wait(0.2, sec);
+
+  //try to 
+  turn_angle_2D(-40);
+  wingFunction();
+  wait(0.2, sec);
+  turn_angle_2D(-120, 100);
+  wait(0.2, sec);
+  wingFunction();
+  moveForward(200);
+
+  //checkpoint 3 moving all balls to our zone
+  wait(0.2, sec);
+  moveForward(400, 150);
+  wait(0.2, sec);
+  moveForward(600, 150);
+
+
   
-  moveRobot(400);
-  // drivetrain code to be tested
+  //arrive at corner
+  // turn_angle_2D(90, 100);
+  // wait(0.2, sec);
+  // moveForward(-200, 150);
+  // wait(0.2, sec);
+  // turn_angle_2D(25, 100);
+  // wingFunction();
+  
+
+  
+  
 }
 
 /*---------------------------------------------------------------------------*/
@@ -429,6 +486,7 @@ void auto_face_greentriball(vision visionSensor)
   if (visionSensor.largestObject.exists)
   {
     int triball_x = visionSensor.largestObject.centerX;
+
     if (triball_x <= (camera_x - error_margin))
     {
       // turn left
@@ -442,17 +500,6 @@ void auto_face_greentriball(vision visionSensor)
       float motor_speed = 25 * (1 - camera_x / triball_x);
       RightDriveSmart.spin(vex::directionType::rev, motor_speed, pct);
       LeftDriveSmart.spin(vex::directionType::fwd, motor_speed, pct);
-    }
-    else if (!switch_sensor.pressing())
-    {
-      RightDriveSmart.spin(fwd, 25, pct);
-      LeftDriveSmart.spin(fwd, 25, pct);
-    }
-    else
-    {
-      // break
-      RightDriveSmart.stop(vex::brakeType::brake);
-      LeftDriveSmart.stop(vex::brakeType::brake);
     }
   }
   return;
