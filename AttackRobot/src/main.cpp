@@ -34,10 +34,12 @@ controller Controller2 = controller(primary);
 motor intakeMotorA = motor(PORT10, ratio18_1, false);
 motor intakeMotorB = motor(PORT20, ratio18_1, true);
 motor_group intake = motor_group(intakeMotorA, intakeMotorB);
-motor shieldMotor = motor(PORT11, ratio18_1, false);
+motor shieldMotorA = motor(PORT11, ratio18_1, false);
+motor shieldMotorB = motor(PORT3, ratio18_1, true);
+motor_group shieldMotor = motor_group(shieldMotorA, shieldMotorB);
 
 motor wingmotorA = motor(PORT15, ratio18_1, false);
-motor wingmotorB = motor(PORT16, ratio18_1, false);
+motor wingmotorB = motor(PORT16, ratio18_1, true);
 motor_group wingmotors = motor_group(wingmotorA, wingmotorB);
 
 
@@ -143,16 +145,17 @@ void shieldControlFunction()
   if (shiledUp == 0)
   {
     shieldMotor.setVelocity(200, pct);
-    shieldMotor.spinFor(directionType::fwd, 130, rotationUnits::deg);
+    shieldMotor.spinFor(directionType::fwd, 120, rotationUnits::deg);
     shiledUp = 1;
   }
 
   else if (shiledUp == 1)
   { 
-    shieldMotor.setVelocity(50, pct);
-    shieldMotor.spinFor(directionType::fwd, -130, rotationUnits::deg);
+    shieldMotor.setVelocity(10, pct);
+    shieldMotor.spinFor(directionType::fwd, -120, rotationUnits::deg);
     shiledUp = 0;
-    shieldMotor.setBrake(brakeType::hold);
+    shieldMotorA.setBrake(brakeType::hold);
+    shieldMotorB.setBrake(brakeType::hold);
   }
 }
 
@@ -162,14 +165,14 @@ void wingsFunction()
   if (WingsExtended == 0)
   {
     wingmotors.setVelocity(20, pct);
-    wingmotors.spinFor(directionType::fwd, -145, rotationUnits::deg);
+    wingmotors.spinFor(directionType::fwd, 145, rotationUnits::deg);
     WingsExtended = 1;
   }
 
   else if (WingsExtended == 1)
   {
     wingmotors.setVelocity(20, pct);
-    wingmotors.spinFor(directionType::fwd, 145, rotationUnits::deg);
+    wingmotors.spinFor(directionType::fwd, -145, rotationUnits::deg);
     WingsExtended = 0;
     wingmotorA.setBrake(brakeType::hold);
     wingmotorB.setBrake(brakeType::hold);
@@ -239,6 +242,9 @@ void pre_auton(void)
   // Initializing Robot Configuration. DO NOT REMOVE!
   vexcodeInit();
 
+  LeftDriveSmart.setStopping(brakeType::hold);
+  RightDriveSmart.setStopping(brakeType::hold);
+
   // All activities that occur before the competition starts
   // Example: clearing encoders, setting servo positions, ...
 }
@@ -253,40 +259,37 @@ void pre_auton(void)
 /*  You must modify the code to add your own robot specific commands here.   */
 /*---------------------------------------------------------------------------*/
 
+
+float mm_to_deg(float distance){
+  return distance / (M_PI * 101.6);
+}
+
+void moveDrivetrain(double distance, int speed=50)
+{
+  LeftDriveSmart.resetPosition();
+  RightDriveSmart.resetPosition();
+  float rev;
+  rev = -360 * mm_to_deg(distance);
+  LeftDriveSmart.spinTo(rev, deg, speed, rpm, false);
+  RightDriveSmart.spinTo(rev, deg, speed, rpm);
+}
+
+void rotateDrivetrain(double angle, int speed=50)
+{
+  LeftDriveSmart.resetPosition();
+  RightDriveSmart.resetPosition();
+  float rev;
+  rev = -angle * 2.555;
+  LeftDriveSmart.spinTo(rev, deg, speed, rpm, false);
+  RightDriveSmart.spinTo(-rev, deg, speed, rpm);
+}
+
 void autonomous(void)
 {
-  // ..........................................................................
-  // Insert autonomous user code here.
-  // ..........................................................................
-
-  // Field dimensions: 3657.6mm x 3657.6mm
-  rightMotorA.setPosition(0, deg);
-  leftMotorA.setPosition(0, deg);
-
-  // forward 600
-  moveRobot(600);
-  // turn 90 with reverse
-  turnRobotToAngle1D(60, false);
-  // move forward 100
-  Drivetrain.setDriveVelocity(150, pct);
-  moveRobot(500, 2);
-
-  turnRobotToAngle1D(30);
-  moveRobot(50, 2);
-  Drivetrain.setDriveVelocity(70, pct);
-  moveRobot(-250, 2);
-
-  Drivetrain.setDriveVelocity(200, pct);
-  moveRobot(300, 2);
-
-  Drivetrain.setDriveVelocity(100, pct);
-  moveRobot(-120);
-  turnRobotToAngle1D(-65, true);
-
-  moveRobot(-350);
-  turnRobotToAngle1D(-45, true);
-  turnRobotToAngle1D(6);
-  moveRobot(-3700);
+  moveDrivetrain(420);
+  wait(1, sec);
+  rotateDrivetrain(-75);
+  moveDrivetrain(420);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -303,8 +306,6 @@ void usercontrol(void)
 {
   LeftDriveSmart.setStopping(brakeType::hold);
   RightDriveSmart.setStopping(brakeType::hold);
-  Drivetrain.setDriveVelocity(50, pct);
-  Drivetrain.setTurnVelocity(25, pct);
 
   // User control code here, inside the loop
   while (1)
@@ -313,21 +314,12 @@ void usercontrol(void)
     // Each time through the loop your program should update motor + servo
     // values based on feedback from the joysticks.
 
-    // ........................................................................
-    // Insert user code here. This is where you use the joystick values to
-    // update your motors, etc.
-    // ........................................................................
-
     RightDriveSmart.spin(vex::directionType::fwd,
                          get_speed_direction("right"),
                          vex::velocityUnits::pct);
     LeftDriveSmart.spin(vex::directionType::fwd, get_speed_direction("left"),
                         vex::velocityUnits::pct);
 
-    // Field dimensions: 3657.6mm x 3657.6mm
-
-    /*---------------------------------------------------------------------------*/
-    /*                             Flyweel Control                               */
 
     Controller2.ButtonX.pressed([]()
                                 { shieldControlFunction(); });
@@ -353,26 +345,15 @@ void usercontrol(void)
       switch_control_direction(&controllerStartTimer);
     }
 
-    /* track_location();
-
-    current_motor_angle_left = leftMotorA.position(deg);
-    current_motor_angle_right = rightMotorA.position(deg); */
-
-    /*---------------------------------------------------------------------------*/
-    /*                             Test Autonomous                             */
-    if (Controller2.ButtonL2.pressing())
-    {
+    if (Controller2.ButtonL2.pressing()){
       autonomous();
     }
 
-    wait(20, msec); // Sleep the task for a short amount of time to
-                    // prevent wasted resources.
+    wait(20, msec);
   }
 }
 
-//
-// Main will set up the competition functions and callbacks.
-//
+
 int main()
 {
   // Set up callbacks for autonomous and driver control periods.
