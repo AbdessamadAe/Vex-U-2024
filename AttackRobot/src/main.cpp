@@ -343,13 +343,9 @@ void usercontrol(void)
       stopIntake();
     }
 
-    if (Controller2.ButtonR2.pressing())
+    if (Controller2.ButtonB.pressing())
     {
       switch_control_direction(&controllerStartTimer);
-    }
-
-    if (Controller2.ButtonL2.pressing()){
-      autonomous();
     }
 
     wait(20, msec);
