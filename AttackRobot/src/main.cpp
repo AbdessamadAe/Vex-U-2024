@@ -260,37 +260,55 @@ void auto_intake_grab(int rotations=360, bool wait=true, int speed=200){
 
 void autonomous(void)
 {
-  //getting the red ball into the goal 
-  turn_angle_2D(-45, 50);
+  vexcodeInit();
+
+  LeftDriveSmart.setStopping(brakeType::hold);
+  RightDriveSmart.setStopping(brakeType::hold);
+  
+  // new automation
+  moveForward(-700, 150);
   wait(0.2, sec);
-  moveForward(500, 150);
+  turn_angle_2D(-36, 150);
   wait(0.2, sec);
-  turn_angle_2D(-45, 50);
+  moveForward(-700, 200);
   wait(0.2, sec);
-  moveForward(150, 150);
+  turn_angle_2D(-62, 150);
   wait(0.2, sec);
-  auto_intake_eject(1500);
+  moveForward(-100, 100);
   wait(0.2, sec);
-  moveForward(-180, 150);
+  auto_intake_eject(2500, false);
   wait(0.2, sec);
-  auto_intake_eject(500);
-  moveForward(180, 150);
-  wait(0.2, sec);
-  moveForward(-180, 150);
-  wait(0.2, sec);
-  turn_angle_2D(-90, 100);
+  moveForward(400); 
   wait(0.2, sec);
 
-  //grabbing the facing green triball 
-  moveForward(400, 150);
+
+  moveForward(-300, 150);
   wait(0.2, sec);
-  turn_angle_2D(30);
+  turn_angle_2D(180, 100);
   wait(0.2, sec);
-  auto_intake_grab(2500, false);
-  moveForward(500, 150);
+  moveForward(-400, 150);
   wait(0.2, sec);
-  moveForward(250, 100);
+  turn_angle_2D(-35);
   wait(0.2, sec);
+  auto_intake_grab(5000, false);
+  moveForward(750, 125);
+  wait(0.2, sec);
+  moveForward(250, 40);
+  wait(0.7, sec);
+  moveForward(-100, 40);
+  wait(0.2, sec);
+  moveForward(100, 40);
+  wait(0.7, sec);
+
+
+  moveForward(-400, 150);
+  wait(0.2, sec);
+  turn_angle_2D(135, 150);
+  wait(0.2, sec);
+  moveForward(200, 150);
+  wait(0.2, sec);
+  auto_intake_eject(2500);
+
 
 
 }
@@ -329,6 +347,11 @@ void usercontrol(void)
 
     Controller2.ButtonA.pressed([]()
                                 { wingsFunction(); });
+    
+    if (Controller2.ButtonR2.pressing())
+    {
+      autonomous();
+    }
 
     if (Controller2.ButtonR1.pressing())
     {
