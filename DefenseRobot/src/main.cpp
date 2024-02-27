@@ -74,7 +74,6 @@ float d = 0;
 float rw = 140;
 float wheeldiam = 101.6;
 float dtheta = 0;
-int stop = 0;
 int armUp = 0;
 int flywheelOn = 0;
 int WingExtended = 0;
@@ -156,15 +155,15 @@ void wingFunction()
   
   if (WingExtended == 0)
   {
-    wingmotor.setVelocity(50, pct);
-    wingmotor.spinFor(directionType::fwd, 210, rotationUnits::deg);
+    wingmotor.setVelocity(70, pct);
+    wingmotor.spinFor(directionType::fwd, 120, rotationUnits::deg);
     WingExtended = 1;
   }
 
   else if (WingExtended == 1)
   {
-    wingmotor.setVelocity(20, pct);
-    wingmotor.spinFor(directionType::fwd, -210, rotationUnits::deg);
+    wingmotor.setVelocity(50, pct);
+    wingmotor.spinFor(directionType::fwd, -120, rotationUnits::deg);
     WingExtended = 0;
     wingmotor.setBrake(brakeType::hold);
   }
@@ -186,6 +185,15 @@ void moveForward(int distance_mm, int speed=200){
 
     RightDriveSmart.spinTo(dist_deg, deg, speed, rpm, false);
     LeftDriveSmart.spinTo(dist_deg, deg, speed, rpm, true);
+}
+
+void moveInCurve(double right, double left, int r_speed, int l_speed){
+
+    RightDriveSmart.resetPosition();
+    LeftDriveSmart.resetPosition();
+
+    RightDriveSmart.spinTo(right, deg, r_speed, rpm, false);
+    LeftDriveSmart.spinTo(left, deg, l_speed, rpm, true);
 }
 
 void turn_angle_2D(int angle, int speed=200){
@@ -222,10 +230,6 @@ void turn_angle_1D(int angle, int speed=200, bool reverse=false){
       
 }
 
-void align_triball(){
-
-}
-
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
 /*                             Autonomous Phase                              */
@@ -234,66 +238,27 @@ void align_triball(){
 /*---------------------------------------------------------------------------*/
 void autonomous(void)
 {
-  turn_angle_2D(10);
-  moveForward(1100, 200);
-  wait(0.5, sec);
-  turn_angle_2D(85, 100);
-  wait(0.5, sec);
-  moveForward(400, 200);
-  wait(0.5, sec);
-  moveForward(100, 100);
-  wait(0.5, sec);
-
-
-  //checkpoint2: after hitting and aligning with the wall
-
-  //making the robot correctly align with next triball without crssing borders
-  moveForward(-20);
-  turn_angle_2D(-20, 100);
-  moveForward(-100);
-  turn_angle_2D(-30, 100);
+  //score red ball
+  moveInCurve(300, 540, 40, 80);
+  moveForward(400, 100);
+  moveForward(-300, 100);
+  turn_angle_2D(190, 80);
+  moveForward(-400, 200);
+  wait(0.4, sec);
+  //hit corner ball
+  moveInCurve(640, 500, 160, 90);
   wait(0.2, sec);
-
-  //go to next corer triball 
-  moveForward(-750);
+  //wingFunction();
+  moveForward(50, 200);
   wait(0.2, sec);
-  turn_angle_2D(180, 100);
-  wait(0.2, sec);
-  moveForward(350);
-  wait(0.2, sec);
-  auto_face_greentriball(visionSensor);
-  wait(0.2, sec);
-  moveForward(300);
-  wait(0.2, sec);
-
-  //try to 
-  turn_angle_2D(-40);
-  wingFunction();
-  wait(0.2, sec);
-  turn_angle_2D(-120, 100);
-  wait(0.2, sec);
-  wingFunction();
-  moveForward(200);
-
-  //checkpoint 3 moving all balls to our zone
-  wait(0.2, sec);
+  turn_angle_2D(-80, 200);
+  wait(0.4, sec);
+  turn_angle_2D(20, 100);
+  //wingFunction();
+  //hit last ball
   moveForward(400, 150);
-  wait(0.2, sec);
-  moveForward(600, 150);
-
-
-  
-  //arrive at corner
-  // turn_angle_2D(90, 100);
-  // wait(0.2, sec);
-  // moveForward(-200, 150);
-  // wait(0.2, sec);
-  // turn_angle_2D(25, 100);
-  // wingFunction();
-  
-
-  
-  
+  turn_angle_2D(-10, 70);
+  moveForward(700, 200);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -373,12 +338,15 @@ void usercontrol(void)
     /*************************************************************************/
     /*                            Temp Code                                  */
     /*************************************************************************/
-    screen.printAt(10, 10, "Dist: %f", obstacle_distance);
-    screen.printAt(10, 60, "Reverse Control: %d", reverserControl);
-    screen.printAt(10, 90, "Inertial Sensor heading: %f",
-                   inertial_sensor.heading(degrees));
+    screen.printAt(10, 20, "RightDrivesmart: %f", rightFrontMotor.position(deg));
+    screen.printAt(10, 50, "LeftDrivesmart: %f", leftFrontMotor.position(deg));
 
-    stop = 1;
+    if (Controller1.ButtonL2.pressing())
+    {
+      RightDriveSmart.resetPosition();
+      LeftDriveSmart.resetPosition();
+      Brain.Screen.clearScreen();
+    }
 
     /******************************* END ************************************/
     wait(20, msec); // Sleep the task to prevent wasted resources.
