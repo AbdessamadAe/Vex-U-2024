@@ -237,14 +237,47 @@ void turn_angle_1D(int angle, int speed=200, bool reverse=false){
 /*---------------------------------------------------------------------------*/
 void autonomous(void)
 {
+  //part 1
   turn_angle_2D(-5, 150);
   wait(0.2, sec);
-  moveForward(700, 150);
+  moveForward(950, 150);
+  wait(0.2, sec);
+  turn_angle_2D(95, 150);
   wait(0.2, sec);
   wingFunction();
   wait(0.2, sec);
-  turn_angle_2D(95);
+  moveForward(850, 200);
   wait(0.2, sec);
+  wingFunction();
+  wait(0.2, sec);
+  moveForward(-300, 150);
+  wait(0.2, sec);
+  moveForward(400, 200);
+  wait(0.2, sec);
+  moveForward(-300, 150);
+  wait(0.2, sec);
+  moveForward(400, 200);
+  wait(0.2, sec);
+  moveForward(-300, 150);
+  wait(0.2, sec);
+  moveForward(400, 200);
+  wait(0.2, sec);
+
+  //part 2
+  moveForward(-700, 150);
+  wait(0.2, sec);
+  turn_angle_2D(75, 150);
+  wait(0.2, sec);
+  moveForward(1100, 150);
+  wait(0.2, sec);
+  turn_angle_2D(-90, 150);
+  wait(0.2, sec);
+  moveForward(1300, 150);
+  wait(0.2, sec);
+  moveForward(-1200, 150);
+  wait(0.2, sec);
+  
+
 
 }
 
