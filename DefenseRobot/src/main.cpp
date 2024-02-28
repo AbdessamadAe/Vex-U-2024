@@ -49,11 +49,10 @@ limit switch_sensor = limit(Threewireport.A);
 inertial inertial_sensor = inertial(PORT16);
 
 motor FlywheelA = motor(PORT4, ratio18_1, false);
-motor FlywheelB = motor(PORT5, ratio18_1, true);
-motor_group Flywheel = motor_group(FlywheelA, FlywheelB);
+motor_group Flywheel = motor_group(FlywheelA);
 motor Armmotor = motor(PORT8, ratio18_1, false);
 
-motor wingmotor = motor(PORT11, ratio18_1, false);
+motor wingmotor = motor(PORT11, ratio18_1, true);
 
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
@@ -122,13 +121,13 @@ void armControlFunction()
   Armmotor.setVelocity(100, pct);
   if (armUp == 0)
   {
-    Armmotor.spinFor(directionType::fwd, 3.5 * 360, rotationUnits::deg);
+    Armmotor.spinFor(directionType::fwd, 3.4 * 360, rotationUnits::deg);
     armUp = 1;
   }
 
   else if (armUp == 1)
   {
-    Armmotor.spinFor(directionType::fwd, -3.5 * 360, rotationUnits::deg);
+    Armmotor.spinFor(directionType::fwd, -3.4 * 360, rotationUnits::deg);
     armUp = 0;
     Armmotor.setBrake(brakeType::hold);
   }
@@ -155,15 +154,15 @@ void wingFunction()
   
   if (WingExtended == 0)
   {
-    wingmotor.setVelocity(70, pct);
-    wingmotor.spinFor(directionType::fwd, 120, rotationUnits::deg);
+    wingmotor.setVelocity(40, pct);
+    wingmotor.spinFor(directionType::fwd, 90, rotationUnits::deg);
     WingExtended = 1;
   }
 
   else if (WingExtended == 1)
   {
-    wingmotor.setVelocity(50, pct);
-    wingmotor.spinFor(directionType::fwd, -120, rotationUnits::deg);
+    wingmotor.setVelocity(10, pct);
+    wingmotor.spinFor(directionType::fwd, -90, rotationUnits::deg);
     WingExtended = 0;
     wingmotor.setBrake(brakeType::hold);
   }
@@ -274,6 +273,7 @@ void usercontrol(void)
   Drivetrain.setDriveVelocity(50, pct);
   Drivetrain.setTurnVelocity(25, pct);
   inertial_sensor.calibrate();
+  wingmotor.setBrake(brakeType::hold);
 
   while (inertial_sensor.isCalibrating())
   {
@@ -443,7 +443,8 @@ void face_angle_smooth(float target_angle, float acceptable_error)
 }
 
 // function for automatically staring the robot toward a detected green triball
-// given the visionSensor object that took the snapshot
+// given the visionSensor 
+//object that took the snapshot
 // It will also move the robot toward the triball until collision is detected
 // with the front switch sensor take into account the location of the camera and
 // a margin error (optional)

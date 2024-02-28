@@ -80,15 +80,15 @@ void shieldControlFunction()
 {
   if (shiledUp == 0)
   {
-    shieldMotor.setVelocity(200, pct);
-    shieldMotor.spinFor(directionType::fwd, 120, rotationUnits::deg);
+    shieldMotor.setVelocity(50, rpm);
+    shieldMotor.spinFor(directionType::fwd, 250, rotationUnits::deg);
     shiledUp = 1;
   }
 
   else if (shiledUp == 1)
   { 
-    shieldMotor.setVelocity(10, pct);
-    shieldMotor.spinFor(directionType::fwd, -120, rotationUnits::deg);
+    shieldMotor.setVelocity(10, rpm);
+    shieldMotor.spinFor(directionType::fwd, -250, rotationUnits::deg);
     shiledUp = 0;
     shieldMotorA.setBrake(brakeType::hold);
     shieldMotorB.setBrake(brakeType::hold);
