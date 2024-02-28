@@ -53,7 +53,7 @@ motor FlywheelB = motor(PORT5, ratio18_1, true);
 motor_group Flywheel = motor_group(FlywheelA, FlywheelB);
 motor Armmotor = motor(PORT8, ratio18_1, false);
 
-motor wingmotor = motor(PORT11, ratio18_1, false);
+motor wingmotor = motor(PORT11, ratio18_1, true);
 
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
@@ -238,27 +238,15 @@ void turn_angle_1D(int angle, int speed=200, bool reverse=false){
 /*---------------------------------------------------------------------------*/
 void autonomous(void)
 {
-  //score red ball
-  moveInCurve(300, 540, 40, 80);
-  moveForward(400, 100);
-  moveForward(-300, 100);
-  turn_angle_2D(190, 80);
-  moveForward(-400, 200);
-  wait(0.4, sec);
-  //hit corner ball
-  moveInCurve(640, 500, 160, 90);
+  turn_angle_2D(-5, 150);
   wait(0.2, sec);
-  //wingFunction();
-  moveForward(50, 200);
+  moveForward(700, 150);
   wait(0.2, sec);
-  turn_angle_2D(-80, 200);
-  wait(0.4, sec);
-  turn_angle_2D(20, 100);
-  //wingFunction();
-  //hit last ball
-  moveForward(400, 150);
-  turn_angle_2D(-10, 70);
-  moveForward(700, 200);
+  wingFunction();
+  wait(0.2, sec);
+  turn_angle_2D(95);
+  wait(0.2, sec);
+
 }
 
 /*---------------------------------------------------------------------------*/
@@ -291,7 +279,7 @@ void usercontrol(void)
     /*************************************************************************/
     /*                         Quick Buttons Set Up                          */
     /*************************************************************************/
-    if (Controller1.ButtonR1.pressing())
+    if (Controller1.ButtonUp.pressing())
     {
       autonomous();
     }
@@ -300,6 +288,7 @@ void usercontrol(void)
     {
       switch_control_direction(&controllerStartTimer);
     }
+
 
 
     Controller1.ButtonX.pressed([]()
