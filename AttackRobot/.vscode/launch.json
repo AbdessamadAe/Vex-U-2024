@@ -8,8 +8,8 @@
       "args": [],
       "stopAtEntry": false,
       "externalConsole": true,
-      "cwd": "c:/Users/User/Desktop/AUI Study/Mechatronic Club/Vex-U-2024/BigRobot",
-      "program": "c:/Users/User/Desktop/AUI Study/Mechatronic Club/Vex-U-2024/BigRobot/build/Debug/outDebug",
+      "cwd": ".",
+      "program": "build/Debug/outDebug",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [

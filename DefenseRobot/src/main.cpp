@@ -10,7 +10,7 @@
 #include <cmath>
 #include <ctime>
 
-// #include "objectDtection.h"
+#include "objectDtection.h"
 #include "vex.h"
 
 using namespace vex;
@@ -23,32 +23,39 @@ using namespace vex;
 /*---------------------------------------------------------------------------*/
 // A global instance of competition
 competition Competition;
+float GEAR_RATIO = 2.9; // 84/48;
+float WHEEL_DIAMETER = 101.6;
+float WHEEL_CIRCUMFERENCE = WHEEL_DIAMETER * M_PI;
+float TURN_ANGLE_MOTOR_RATIO = 5.4;
+
+
 
 // define your global instances of motors and other devices here
-motor leftFrontMotor = motor(PORT3, ratio18_1, true);
-motor leftBackMotor = motor(PORT12, ratio18_1, true);
+motor leftFrontMotor = motor(PORT3, ratio18_1, false);
+motor leftBackMotor = motor(PORT12, ratio18_1, false);
 motor_group LeftDriveSmart = motor_group(leftFrontMotor, leftBackMotor);
-
 motor rightFrontMotor = motor(PORT10, ratio18_1, true);
 motor rightBackMotor = motor(PORT13, ratio18_1, true);
 motor_group RightDriveSmart = motor_group(rightFrontMotor, rightBackMotor);
 
-drivetrain Drivetrain =
-    drivetrain(LeftDriveSmart, RightDriveSmart, 319.19, 295, 40, mm, 1);
+//track width = 260, wheel base = 170
+drivetrain Drivetrain = drivetrain(LeftDriveSmart, RightDriveSmart, WHEEL_CIRCUMFERENCE, 260, 170, mm, GEAR_RATIO);
 
 controller Controller1 = controller(primary);
 brain::lcd screen = vex::brain::lcd();
-vision visionSensor = vision(PORT10);
+vision visionSensor = vision(PORT7);
 triport Threewireport = triport(PORT22);
 limit switch_sensor = limit(Threewireport.A);
 inertial inertial_sensor = inertial(PORT16);
 
 motor FlywheelA = motor(PORT4, ratio18_1, false);
-motor FlywheelB = motor(PORT5, ratio18_1, true);
-motor_group Flywheel = motor_group(FlywheelA, FlywheelB);
+motor_group Flywheel = motor_group(FlywheelA);
 motor Armmotor = motor(PORT8, ratio18_1, false);
 
-motor wingmotor = motor(PORT11, ratio18_1, false);
+motor wingmotorL = motor(PORT11, ratio18_1, true);
+motor wingmotorR = motor(PORT7, ratio18_1, false);
+motor_group wingmotor = motor_group(wingmotorL, wingmotorR);
+
 
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
@@ -69,10 +76,13 @@ float d = 0;
 float rw = 140;
 float wheeldiam = 101.6;
 float dtheta = 0;
-int stop = 0;
 int armUp = 0;
 int flywheelOn = 0;
-int WingExtended = 0;
+int WingLExtended = 0;
+int WingRExtended = 0;
+
+int auton = 0;
+
 
 struct
 {
@@ -105,26 +115,30 @@ void pre_auton(void)
 {
   // DO NOT REMOVE! Initializing Robot Configuration.
   vexcodeInit();
-  // All activities that occur before the competition starts
-  // Example: clearing encoders, setting servo positions, ...
 
+  RightDriveSmart.setStopping(hold);
+  LeftDriveSmart.setStopping(hold);
+  
   return;
 }
 
-void armControlFunction()
+void armControlFunction(double i)
 {
   Armmotor.setVelocity(100, pct);
   if (armUp == 0)
   {
-    Armmotor.spinFor(directionType::fwd, 2.8 * 360, rotationUnits::deg);
+    Armmotor.spinFor(directionType::fwd, i * 360, rotationUnits::deg);
     armUp = 1;
+    Armmotor.setBrake(brakeType::hold);
+
   }
 
   else if (armUp == 1)
   {
-    Armmotor.spinFor(directionType::fwd, -2.8 * 360, rotationUnits::deg);
+    Armmotor.setTimeout(1000, msec);
+    Armmotor.spinFor(directionType::fwd, -i * 360, rotationUnits::deg);
     armUp = 0;
-    Armmotor.setBrake(brakeType::hold);
+    Armmotor.setBrake(brakeType::coast);
   }
 }
 
@@ -132,35 +146,137 @@ void flywheel(int speed)
 {
   if (flywheelOn == 0)
   {
-    Flywheel.spin(vex::directionType::fwd, speed, vex::velocityUnits::pct);
+    FlywheelA.spin(vex::directionType::fwd, speed, vex::velocityUnits::pct);
     flywheelOn = 1;
   }
   else if (flywheelOn == 1)
   {
-    Flywheel.stop(vex::brakeType::brake);
+    FlywheelA.stop(vex::brakeType::brake);
     flywheelOn = 0;
   }
 }
 
 /*---------------------------Wing Function-------------------------------*/
 
-void wingFunction()
+void wingRFunction()
 {
   
-  if (WingExtended == 0)
+  if (WingRExtended == 0)
   {
-    wingmotor.setVelocity(50, pct);
-    wingmotor.spinFor(directionType::fwd, 210, rotationUnits::deg);
-    WingExtended = 1;
+    wingmotorR.setVelocity(50, pct);
+    wingmotorR.spinFor(directionType::fwd, 100, rotationUnits::deg);
+    WingRExtended = 1;
   }
 
-  else if (WingExtended == 1)
+  else if (WingRExtended == 1)
   {
-    wingmotor.setVelocity(20, pct);
-    wingmotor.spinFor(directionType::fwd, -210, rotationUnits::deg);
-    WingExtended = 0;
-    wingmotor.setBrake(brakeType::hold);
+    wingmotorR.setVelocity(30, pct);
+    wingmotorR.spinFor(directionType::fwd, -100, rotationUnits::deg);
+    WingRExtended = 0;
+    wingmotorR.setBrake(brakeType::hold);
   }
+}
+
+void wingLFunction()
+{
+  
+  if (WingLExtended == 0)
+  {
+    wingmotorL.setVelocity(50, pct);
+    wingmotorL.spinFor(directionType::fwd, 100, rotationUnits::deg);
+    WingLExtended = 1;
+  }
+
+  else if (WingLExtended == 1)
+  {
+    wingmotorL.setVelocity(30, pct);
+    wingmotorL.spinFor(directionType::fwd, -100, rotationUnits::deg);
+    WingLExtended = 0;
+    wingmotorL.setBrake(brakeType::hold);
+  }
+}
+
+void wingFunction(){
+  wingRFunction();
+  wingLFunction();
+}
+
+void ButtonAwingFunction(){
+  if (reverserControl){
+    wingLFunction();
+  }
+  else{
+    wingRFunction();
+  }
+}
+
+void ButtonYwingFunction(){
+  if (reverserControl){
+    wingRFunction();
+  }
+  else{
+    wingLFunction();
+  }
+}
+
+//mm to degrees
+float mm_to_deg(int distance_mm){
+    float rev = distance_mm / WHEEL_CIRCUMFERENCE;
+    return  rev * 360;
+}
+
+void moveForward(int distance_mm, int speed=200){
+
+    RightDriveSmart.resetPosition();
+    LeftDriveSmart.resetPosition();
+
+    float dist_deg = mm_to_deg(distance_mm);
+
+    RightDriveSmart.spinTo(dist_deg, deg, speed, rpm, false);
+    LeftDriveSmart.spinTo(dist_deg, deg, speed, rpm, true);
+}
+
+void moveInCurve(double right, double left, int r_speed, int l_speed){
+
+    RightDriveSmart.resetPosition();
+    LeftDriveSmart.resetPosition();
+
+    RightDriveSmart.spinTo(right, deg, r_speed, rpm, false);
+    LeftDriveSmart.spinTo(left, deg, l_speed, rpm, true);
+}
+
+void turn_angle_2D(int angle, int speed=200){
+    RightDriveSmart.resetPosition();
+    LeftDriveSmart.resetPosition();
+
+      float deg_angle = angle * 2.57;
+      LeftDriveSmart.spinTo(deg_angle,  deg, speed, rpm, false);
+      RightDriveSmart.spinTo(-deg_angle,  deg, speed, rpm);
+}
+
+void turn_angle_1D(int angle, int speed=200, bool reverse=false){
+    RightDriveSmart.resetPosition();
+    LeftDriveSmart.resetPosition();
+
+      float deg_angle = angle * 2.57;
+
+      if(reverse){
+          if (angle > 0){
+            LeftDriveSmart.spinTo(-deg_angle*2,  deg, speed, rpm);
+          }
+          else {
+            RightDriveSmart.spinTo(-deg_angle*2,  deg, speed, rpm);
+          }
+      }
+      else {
+          if (angle > 0){
+            LeftDriveSmart.spinTo(deg_angle*2,  deg, speed, rpm);
+          }
+          else {
+            RightDriveSmart.spinTo(deg_angle*2,  deg, speed, rpm);
+          }
+      }
+      
 }
 
 /*---------------------------------------------------------------------------*/
@@ -171,13 +287,43 @@ void wingFunction()
 /*---------------------------------------------------------------------------*/
 void autonomous(void)
 {
-  // Insert autonomous user code here.
-  Drivetrain.setDriveVelocity(25, pct);
-  Drivetrain.setTurnVelocity(25, pct);
-  Drivetrain.driveFor(500, mm, true);
-  Drivetrain.turnFor(50, rotationUnits::deg);
 
-  // drivetrain code to be tested
+  //for autonomous to run only one time
+  auton = 1;
+
+  //part 1
+  wait(0.2, sec);
+  moveForward(990, 90);
+  wait(0.2, sec);
+  turn_angle_2D(90, 70);
+  wait(0.2, sec);
+  wingFunction();
+  wait(0.2, sec);
+  moveForward(850, 200);
+  wait(0.2, sec);
+  wingFunction();
+  wait(.2, sec);
+  moveForward(-400, 200);
+  wait(.2, sec);
+  moveForward(520, 150);
+  wait(.2, sec);
+  moveForward(-300, 200);
+  wait(.2, sec);
+  moveForward(340, 100);
+
+  //part 2
+  moveForward(-740, 150);
+  wait(0.2, sec);
+  turn_angle_2D(90, 150);
+  wait(0.2, sec);
+  moveForward(1250, 150);
+  wait(0.2, sec);
+  turn_angle_2D(-85, 150);
+  wait(0.2, sec);
+  moveForward(900, 150);
+  wait(0.2, sec);
+  moveForward(-900, 150);
+
 }
 
 /*---------------------------------------------------------------------------*/
@@ -193,6 +339,8 @@ void usercontrol(void)
   Drivetrain.setDriveVelocity(50, pct);
   Drivetrain.setTurnVelocity(25, pct);
   inertial_sensor.calibrate();
+  wingmotorL.setBrake(brakeType::hold);
+  wingmotorR.setBrake(brakeType::hold);
 
   while (inertial_sensor.isCalibrating())
   {
@@ -210,32 +358,26 @@ void usercontrol(void)
     /*************************************************************************/
     /*                         Quick Buttons Set Up                          */
     /*************************************************************************/
-    if (Controller1.ButtonR1.pressing())
+    if (Controller1.ButtonUp.pressing() && auton == 0)
     {
       autonomous();
     }
 
-    if (Controller1.ButtonR2.pressing())
+    if (Controller1.ButtonR1.pressing())
     {
       switch_control_direction(&controllerStartTimer);
     }
-
-    if (Controller1.ButtonL1.pressing())
-    {
-      face_angle_smooth();
-    }
-
-    if (Controller1.ButtonL2.pressing())
-    {
-      auto_face_greentriball(visionSensor);
-    }
-
+    Controller1.ButtonB.pressed([]()
+                                { armControlFunction(3.6); });
+    
+    Controller1.ButtonL1.pressed([]()
+                                { armControlFunction(2); });                            
     Controller1.ButtonX.pressed([]()
-                                { armControlFunction(); });
-    Controller1.ButtonY.pressed([]()
                                 { flywheel(100); });
     Controller1.ButtonA.pressed([]()
-                                { wingFunction(); });
+                                { ButtonAwingFunction(); });
+    Controller1.ButtonY.pressed([]()
+                                { ButtonYwingFunction(); });
 
     /*************************************************************************/
     /*                              Drivetrain                               */
@@ -266,12 +408,15 @@ void usercontrol(void)
     /*************************************************************************/
     /*                            Temp Code                                  */
     /*************************************************************************/
-    screen.printAt(10, 10, "Dist: %f", obstacle_distance);
-    screen.printAt(10, 60, "Reverse Control: %d", reverserControl);
-    screen.printAt(10, 90, "Inertial Sensor heading: %f",
-                   inertial_sensor.heading(degrees));
+    screen.printAt(10, 20, "RightDrivesmart: %f", rightFrontMotor.position(deg));
+    screen.printAt(10, 50, "LeftDrivesmart: %f", leftFrontMotor.position(deg));
 
-    stop = 1;
+    if (Controller1.ButtonL2.pressing())
+    {
+      RightDriveSmart.resetPosition();
+      LeftDriveSmart.resetPosition();
+      Brain.Screen.clearScreen();
+    }
 
     /******************************* END ************************************/
     wait(20, msec); // Sleep the task to prevent wasted resources.
@@ -299,6 +444,16 @@ int main()
     wait(100, msec);
   }
 } // End of the Main function
+
+
+
+
+
+
+
+
+
+
 
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
@@ -348,17 +503,18 @@ void face_angle_smooth(float target_angle, float acceptable_error)
     // screen.printAt(10, 180, "Turning smoothly ....");
 
     // break the automated turning in case the robot stuck
-    if (Controller1.ButtonL1.pressing())
+    /* if (Controller1.ButtonL1.pressing())
     {
       return;
-    }
+    } */
 
     wait(20, msec);
   }
 }
 
 // function for automatically staring the robot toward a detected green triball
-// given the visionSensor object that took the snapshot
+// given the visionSensor 
+//object that took the snapshot
 // It will also move the robot toward the triball until collision is detected
 // with the front switch sensor take into account the location of the camera and
 // a margin error (optional)
@@ -369,6 +525,7 @@ void auto_face_greentriball(vision visionSensor)
   if (visionSensor.largestObject.exists)
   {
     int triball_x = visionSensor.largestObject.centerX;
+
     if (triball_x <= (camera_x - error_margin))
     {
       // turn left
@@ -382,17 +539,6 @@ void auto_face_greentriball(vision visionSensor)
       float motor_speed = 25 * (1 - camera_x / triball_x);
       RightDriveSmart.spin(vex::directionType::rev, motor_speed, pct);
       LeftDriveSmart.spin(vex::directionType::fwd, motor_speed, pct);
-    }
-    else if (!switch_sensor.pressing())
-    {
-      RightDriveSmart.spin(fwd, 25, pct);
-      LeftDriveSmart.spin(fwd, 25, pct);
-    }
-    else
-    {
-      // break
-      RightDriveSmart.stop(vex::brakeType::brake);
-      LeftDriveSmart.stop(vex::brakeType::brake);
     }
   }
   return;
@@ -408,23 +554,23 @@ float get_speed_direction(const char *side)
   {
     if (strcmp(side, "right"))
     {
-      return -Controller1.Axis1.position() - Controller1.Axis3.position();
+      return -Controller1.Axis3.position() + 0.7*Controller1.Axis1.position();
     }
 
     if (strcmp(side, "left"))
     {
-      return -Controller1.Axis1.position() + Controller1.Axis3.position();
+      return -Controller1.Axis3.position() - 0.7*Controller1.Axis1.position();
     }
   }
 
   if (strcmp(side, "right"))
   {
-    return -Controller1.Axis1.position() + Controller1.Axis3.position();
+    return Controller1.Axis3.position() + 0.7*Controller1.Axis1.position();
   }
 
   if (strcmp(side, "left"))
   {
-    return - Controller1.Axis3.position() - Controller1.Axis1.position();
+    return Controller1.Axis3.position() - 0.7*Controller1.Axis1.position();
   }
 
   return 0;

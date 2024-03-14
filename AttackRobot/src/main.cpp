@@ -17,140 +17,152 @@ using namespace vex;
 
 // A global instance of competition
 competition Competition;
-int GEAR_RATIO = 3; //84/48;
+int GEAR_RATIO = 3; // 84/48;
 float WHEEL_DIAMETER = 101.6;
-float WHEEL_CIRCUMFERENCE = (WHEEL_DIAMETER/2) * M_PI;
+float WHEEL_CIRCUMFERENCE = WHEEL_DIAMETER  * M_PI;
 float TURN_ANGLE_MOTOR_RATIO = 5.4;
 
 // define your global instances of motors and other devices here
-motor leftMotorA = motor(PORT10, ratio18_1, false);
-motor leftMotorB = motor(PORT20, ratio18_1, false);
-motor rightMotorA = motor(PORT1, ratio18_1, true);
-motor rightMotorB = motor(PORT11, ratio18_1, true);
+motor leftMotorA = motor(PORT9, ratio18_1, false);
+motor leftMotorB = motor(PORT1, ratio18_1, false);
+motor rightMotorA = motor(PORT12, ratio18_1, true);
+motor rightMotorB = motor(PORT2, ratio18_1, true);
 motor_group LeftDriveSmart = motor_group(leftMotorA, leftMotorB);
 motor_group RightDriveSmart = motor_group(rightMotorA, rightMotorB);
 drivetrain Drivetrain = drivetrain(LeftDriveSmart, RightDriveSmart, WHEEL_CIRCUMFERENCE, 390, 315, mm, GEAR_RATIO);
 controller Controller2 = controller(primary);
-motor FlywheelA = motor(PORT7, ratio18_1, false);
-motor FlywheelB = motor(PORT8, ratio18_1, true);
-motor_group Flywheel = motor_group(FlywheelA, FlywheelB);
-motor Armmotor = motor(PORT9, ratio18_1, false);
+motor intakeMotorA = motor(PORT10, ratio18_1, false);
+motor intakeMotorB = motor(PORT20, ratio18_1, true);
+motor_group intake = motor_group(intakeMotorA, intakeMotorB);
+motor shieldMotorA = motor(PORT11, ratio18_1, false);
+motor shieldMotorB = motor(PORT3, ratio18_1, true);
+motor_group shieldMotor = motor_group(shieldMotorA, shieldMotorB);
 
-int armUp = 0;
+motor wingmotorA = motor(PORT15, ratio18_1, false);
+motor wingmotorB = motor(PORT16, ratio18_1, true);
+motor_group wingmotors = motor_group(wingmotorA, wingmotorB);
+
+int auton = 0;
+
+
+int shiledUp = 0;
+int WingsExtended = 0;
+bool reverserControl = false;
+time_t controllerStartTimer = time(NULL);
+
 
 /*---------------------------------------------------------------------------*/
-/*                                Flywheel Function                           */
+/*                                Intake Function                           */
 
+void intakeGrabe()
+{
+  intake.spin(vex::directionType::fwd, 200, vex::velocityUnits::rpm);
+}
+
+void intakeReverse()
+{
+  intake.spin(vex::directionType::fwd, -200, vex::velocityUnits::rpm);
+}
+
+void stopIntake()
+{
+  intake.stop();
+}
 
 /*---------------------------------------------------------------------------*/
 /*                            Autonomous Functions                           */
 
-
-
-
-//elementary autonoumous movements 
+// elementary autonoumous movements
 
 //========================================================================================
 //========================================================================================
 
-//move toward desired location using drivetrain initialized with hyperparametrs through testing
-void moveRobot(float distance, int timout=5)
+// function to activate the shield
+void shieldControlFunction()
 {
-  
-   Drivetrain.setTimeout(timout, sec);
-   Drivetrain.driveFor(-distance, mm);
-}
-
-
-//function to make robot turn toward angle in degree, use a hyperparameter that has been found by testing 
-//this funtion use only one set (Right or Left) of motors to turn the robot 
-//Good for not making the ball spli but bad for speed, very slow 
-//the reverse parameter is set to false to make the robot turn while going forward, true while going backward
-//TO DO: add a timout similar to the moveForward timeout
-void turnRobotToAngle1D(float angle, bool reverse=false)
-{
-  if(!reverse){
-    if (angle < 0)
-    {
-      RightDriveSmart.spinFor(TURN_ANGLE_MOTOR_RATIO * angle, deg);
-    }
-    else
-    {
-      LeftDriveSmart.spinFor(-TURN_ANGLE_MOTOR_RATIO * angle, deg);
-    }
-  }
-  else{
-    if (angle < 0)
-    {
-      LeftDriveSmart.spinFor(-TURN_ANGLE_MOTOR_RATIO * angle, deg);
-    }
-    else
-    {
-      RightDriveSmart.spinFor(TURN_ANGLE_MOTOR_RATIO * angle, deg);
-    }
-  }
-  
-}
-
-
-//function tha uses both the righ and left mototors to make a turn
-//good speed but bad ball control 
-
-//TO DO: add a timout similar to the moveForward timeout
-void turnRobotToAngle2D(float angle, bool reverse=false)
-{
-  if (angle < 0)
+  if (shiledUp == 0)
   {
-    RightDriveSmart.spinFor(TURN_ANGLE_MOTOR_RATIO/2 * angle, deg);
-    LeftDriveSmart.spinFor(-TURN_ANGLE_MOTOR_RATIO/2 * angle, deg);
+    shieldMotor.setVelocity(50, rpm);
+    shieldMotor.spinFor(directionType::fwd, 250, rotationUnits::deg);
+    shiledUp = 1;
+  }
+
+  else if (shiledUp == 1)
+  { 
+    shieldMotor.setVelocity(10, rpm);
+    shieldMotor.spinFor(directionType::fwd, -250, rotationUnits::deg);
+    shiledUp = 0;
+    shieldMotorA.setBrake(brakeType::hold);
+    shieldMotorB.setBrake(brakeType::hold);
+  }
+}
+
+void wingsFunction()
+{
+  
+  if (WingsExtended == 0)
+  {
+    wingmotors.setVelocity(20, pct);
+    wingmotors.spinFor(directionType::fwd, 145, rotationUnits::deg);
+    WingsExtended = 1;
+  }
+
+  else if (WingsExtended == 1)
+  {
+    wingmotors.setVelocity(20, pct);
+    wingmotors.spinFor(directionType::fwd, -145, rotationUnits::deg);
+    WingsExtended = 0;
+    wingmotorA.setBrake(brakeType::hold);
+    wingmotorB.setBrake(brakeType::hold);
+  }
+}
+
+float get_speed_direction(const char *side)
+{
+  if (reverserControl)
+  {
+    if (strcmp(side, "right"))
+    {
+      return Controller2.Axis3.position() - Controller2.Axis1.position();
+    }
+
+    if (strcmp(side, "left"))
+    {
+      return Controller2.Axis3.position() + Controller2.Axis1.position();
+    }
+  }
+
+  if (strcmp(side, "right"))
+  {
+    return -Controller2.Axis3.position() - Controller2.Axis1.position();
+  }
+
+  if (strcmp(side, "left"))
+  {
+    return -Controller2.Axis3.position() + Controller2.Axis1.position();
+  }
+
+  return 0;
+}
+
+void switch_control_direction(time_t *controllerStartTimer)
+{
+  time_t currentTime = time(NULL);
+  if (difftime(currentTime, *controllerStartTimer) < 1)
+  {
+    return;
+  }
+  *controllerStartTimer = time(NULL);
+
+  if (reverserControl)
+  {
+    reverserControl = false;
   }
   else
   {
-    LeftDriveSmart.spinFor(-TURN_ANGLE_MOTOR_RATIO/2 * angle, deg);
-    RightDriveSmart.spinFor(TURN_ANGLE_MOTOR_RATIO/2 * angle, deg);
+    reverserControl = true;
   }
 }
-
-
-//function to both move toward and turn an angle
-void moveAndTurn(float distance, float angle)
-{
-  moveRobot(distance);
-  turnRobotToAngle2D(angle);
-}
-
-
-//function to activate the arm and start the flywheel rotation, take speed of flywheel as argument
-void flywheel(int speed)
-{
-  if (armUp == 0)
-  {
-    Armmotor.setVelocity(100, pct);
-    Armmotor.spinFor(directionType::fwd, 3.2 * 360, rotationUnits::deg);
-    armUp = 1;
-  }
-  Flywheel.spin(vex::directionType::rev, speed, vex::velocityUnits::pct);
-}
-
-
-//function to stop the flywheel and take the arm down
-void Stopflywheel()
-{
-  Flywheel.stop();
-  if (armUp == 1)
-  {
-    Armmotor.spinFor(directionType::fwd, -3.1 * 360, rotationUnits::deg);
-    armUp = 0;
-  }
-
-  Armmotor.setBrake(brakeType::hold);
-}
-
-//===============================================================================================
-//================================================================================================
-
-
-
 
 /*---------------------------------------------------------------------------*/
 /*                          Pre-Autonomous Functions                         */
@@ -168,6 +180,9 @@ void pre_auton(void)
   // Initializing Robot Configuration. DO NOT REMOVE!
   vexcodeInit();
 
+  LeftDriveSmart.setStopping(brakeType::hold);
+  RightDriveSmart.setStopping(brakeType::hold);
+
   // All activities that occur before the competition starts
   // Example: clearing encoders, setting servo positions, ...
 }
@@ -182,40 +197,140 @@ void pre_auton(void)
 /*  You must modify the code to add your own robot specific commands here.   */
 /*---------------------------------------------------------------------------*/
 
+
+//mm to degrees
+float mm_to_deg(int distance_mm){
+    float rev = distance_mm / WHEEL_CIRCUMFERENCE;
+    return  rev * 360;
+}
+
+void moveForward(int distance_mm, int speed=200){
+
+    RightDriveSmart.resetPosition();
+    LeftDriveSmart.resetPosition();
+
+    float dist_deg = -mm_to_deg(distance_mm) * 0.67; // need to be fine tuned
+
+    RightDriveSmart.spinTo(dist_deg, deg, speed, rpm, false);
+    LeftDriveSmart.spinTo(dist_deg, deg, speed, rpm, true);
+}
+
+void turn_angle_2D(int angle, int speed=200){
+    RightDriveSmart.resetPosition();
+    LeftDriveSmart.resetPosition();
+
+      float deg_angle = -angle * 2.62;
+      LeftDriveSmart.spinTo(deg_angle,  deg, speed, rpm, false);
+      RightDriveSmart.spinTo(-deg_angle,  deg, speed, rpm);
+}
+
+void turn_angle_1D(int angle, int speed=200, bool reverse=false){
+    RightDriveSmart.resetPosition();
+    LeftDriveSmart.resetPosition();
+
+      float deg_angle = -angle * 2.62;
+
+      if(reverse){
+          if (angle > 0){
+            LeftDriveSmart.spinTo(-deg_angle*2,  deg, speed, rpm);
+          }
+          else {
+            RightDriveSmart.spinTo(-deg_angle*2,  deg, speed, rpm);
+          }
+      }
+      else {
+          if (angle > 0){
+            LeftDriveSmart.spinTo(deg_angle*2,  deg, speed, rpm);
+          }
+          else {
+            RightDriveSmart.spinTo(deg_angle*2,  deg, speed, rpm);
+          }
+      }
+      
+}
+
+void auto_intake_eject(int rotations=360, bool wait=true, int speed=200){
+  intake.resetPosition();
+  intake.spinTo(-rotations, deg, speed, rpm, wait);
+}
+
+void auto_intake_grab(int rotations=360, bool wait=true, int speed=200){
+  intake.resetPosition();
+  intake.spinTo(rotations, deg, speed, rpm, wait);
+}
+
+
 void autonomous(void)
 {
-  // ..........................................................................
-  // Insert autonomous user code here.
-  // ..........................................................................
+  vexcodeInit();
+  auton = 1;
 
-  // Field dimensions: 3657.6mm x 3657.6mm
-  rightMotorA.setPosition(0, deg);
-  leftMotorA.setPosition(0, deg);
+  LeftDriveSmart.setStopping(brakeType::hold);
+  RightDriveSmart.setStopping(brakeType::hold);
+  
+  moveForward(-1130, 150);
+  wait(0.2, sec);
+  turn_angle_2D(-45, 100);
+  moveForward(-150, 50);
+  wait(0.2, sec);
+  turn_angle_2D(-50, 100);
+  moveForward(150, 50);
+  wait(0.2, sec);
+  // new automation
+  moveForward(-200, 130);
+  wait(0.2, sec);
+  turn_angle_2D(-20, 100);
+  wait(0.2, sec);
+  moveForward(-500, 130);
+  wait(0.2, sec);
+  turn_angle_2D(-17, 100);
+  wait(0.2, sec);
+  // hit the 4 triballs
+  moveForward(-800, 160);
+  wait(0.2, sec);
+  //
+  turn_angle_2D(-50, 100);
+  wait(0.2, sec);
+  moveForward(-200, 100);
+  wait(0.2, sec);
+  moveForward(400);
+  wait(0.2, sec);
+  auto_intake_eject(2500, false);
+  wait(2, sec);
 
-  //forward 600
-      moveRobot(600);
-      //turn 90 with reverse
-      turnRobotToAngle1D(60, false);
-      //move forward 100
-      Drivetrain.setDriveVelocity(150, pct);
-      moveRobot(500, 2);
+  moveForward(-250, 150);
+  wait(0.2, sec);
+  turn_angle_2D(180, 50);
+  wait(0.2, sec);
+  moveForward(-600, 150);
+  wait(0.2, sec);
+  turn_angle_2D(-37);
+  wait(0.2, sec);
+  auto_intake_grab(5000, false);
+  moveForward(700, 75);
+  wait(0.2, sec);
+  moveForward(250, 40);
+  wait(0.7, sec);
+  //now ball is in, its gonna go back to score it
+  moveForward(-100, 40);
+  wait(0.2, sec);
+  moveForward(100, 40);
+  wait(0.7, sec);
 
-      turnRobotToAngle1D(30);
-      moveRobot(50, 2);
-      Drivetrain.setDriveVelocity(70, pct);
-      moveRobot(-250, 2);
-
-      Drivetrain.setDriveVelocity(200, pct);
-      moveRobot(300, 2);
-
-      Drivetrain.setDriveVelocity(100, pct);
-      moveRobot(-120);
-      turnRobotToAngle1D(-65, true);
-      
-      moveRobot(-350);
-      turnRobotToAngle1D(-45, true);
-      turnRobotToAngle1D(6);
-      moveRobot(-3700);
+  moveForward(-400, 150);
+  wait(0.2, sec);
+  turn_angle_2D(135, 150);
+  wait(0.2, sec);
+  moveForward(200, 150);
+  wait(0.2, sec);
+  auto_intake_eject(2500);
+  wait(2, sec);
+  moveForward(-300, 150);
+  wait(0.2, sec);
+  turn_angle_2D(135, 150);
+  wait(0.2, sec);
+  moveForward(-500, 150);
+  wait(0.2, sec);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -232,8 +347,6 @@ void usercontrol(void)
 {
   LeftDriveSmart.setStopping(brakeType::hold);
   RightDriveSmart.setStopping(brakeType::hold);
-  Drivetrain.setDriveVelocity(50, pct);
-  Drivetrain.setTurnVelocity(25, pct);
 
   // User control code here, inside the loop
   while (1)
@@ -242,44 +355,47 @@ void usercontrol(void)
     // Each time through the loop your program should update motor + servo
     // values based on feedback from the joysticks.
 
-    // ........................................................................
-    // Insert user code here. This is where you use the joystick values to
-    // update your motors, etc.
-    RightDriveSmart.spin(vex::directionType::fwd, Controller2.Axis3.position() + Controller2.Axis1.position(), pct);
-    LeftDriveSmart.spin(vex::directionType::fwd, Controller2.Axis3.position() - Controller2.Axis1.position(), pct);
-    // ........................................................................
+    RightDriveSmart.spin(vex::directionType::fwd,
+                         get_speed_direction("right"),
+                         vex::velocityUnits::pct);
+    LeftDriveSmart.spin(vex::directionType::fwd, get_speed_direction("left"),
+                        vex::velocityUnits::pct);
 
-    // Field dimensions: 3657.6mm x 3657.6mm
-
-    /*---------------------------------------------------------------------------*/
-    /*                             Flyweel Control                               */
 
     Controller2.ButtonX.pressed([]()
-                                { flywheel(100); });
-    Controller2.ButtonY.pressed([]()
-                                { Stopflywheel(); });
+                                { shieldControlFunction(); });
 
-    /* track_location();
-
-    current_motor_angle_left = leftMotorA.position(deg);
-    current_motor_angle_right = rightMotorA.position(deg); */
-
-    /*---------------------------------------------------------------------------*/
-    /*                             Test Autonomous                             */
-    if (Controller2.ButtonB.pressing())
+    Controller2.ButtonA.pressed([]()
+                                { wingsFunction(); });
+    
+    if (Controller2.ButtonUp.pressing() && auton == 0)
     {
       autonomous();
-      
     }
 
-    wait(20, msec); // Sleep the task for a short amount of time to
-                    // prevent wasted resources.
+    if (Controller2.ButtonR1.pressing())
+    {
+      intakeGrabe();
+    }
+    else if (Controller2.ButtonL1.pressing())
+    {
+      intakeReverse();
+    }
+    else
+    {
+      stopIntake();
+    }
+
+    if (Controller2.ButtonB.pressing())
+    {
+      switch_control_direction(&controllerStartTimer);
+    }
+
+    wait(20, msec);
   }
 }
 
-//
-// Main will set up the competition functions and callbacks.
-//
+
 int main()
 {
   // Set up callbacks for autonomous and driver control periods.
@@ -295,13 +411,6 @@ int main()
     wait(100, msec);
   }
 }
-
-
-
-
-
-
-
 
 /****************************************************************************/
 /*                             DO NOT DELETE                                */
@@ -351,16 +460,16 @@ void gps_drive_test() {
     if (gps_sensor.yPosition(mm) > y_target-0.05 || gps_sensor.yPosition(mm) < y_target+0.05) {
       return;
     }
-    
+
     drive_to_with_gps(x_target, y_target);
   }
-  
+
 }
 */
 
-  // if (Controller1.ButtonB.pressing()) {
-  //   gps_drive_test();
-  // }
+// if (Controller2.ButtonB.pressing()) {
+//   gps_drive_test();
+// }
 
 /****************************************************************************/
 /*                                                                          */
@@ -370,12 +479,7 @@ void gps_drive_test() {
 /*                                                                          */
 /****************************************************************************/
 
-
-
-
-
-
-//unused functions ==============================================================================
+// unused functions ==============================================================================
 int current_motor_angle_left = 0;
 int current_motor_angle_right = 0;
 float d = 0;
