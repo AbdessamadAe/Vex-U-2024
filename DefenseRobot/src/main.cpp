@@ -15,53 +15,91 @@
 
 using namespace vex;
 
-/*---------------------------------------------------------------------------*/
-/*                                                                           */
-/*                             Global Instances                              */
-/*                                                                           */
-/*                                                                           */
-/*---------------------------------------------------------------------------*/
-// A global instance of competition
-competition Competition;
-float GEAR_RATIO = 2.9; // 84/48;
-float WHEEL_DIAMETER = 101.6;
-float WHEEL_CIRCUMFERENCE = WHEEL_DIAMETER * M_PI;
-float TURN_ANGLE_MOTOR_RATIO = 5.4;
+namespace wheels_circumferences_mm {
+  const double k200Mm = 200;
+  const double k2_75Inch = 219.44;
+  const double k3_25Inch = 299.24;
+  const double k4Inch = 319.19;
+  const double k5Inch = 398.98;
+  const double k6Inch = 478.78;
+}
+
+/*----------------------------------------------------------------------------*/
+/*                            Robot Specs (change them)                       */
+/*----------------------------------------------------------------------------*/
+namespace robot_specs {
+  // Mechanical Advantage
+  const int kDrivenGear = 12;
+  const int kDrivingGear = 12;
+  const double kGearRatio = (double) kDrivenGear / kDrivingGear;
+  const int kTargetedVelocityInRPM = 200; // if gear ratio = 1, enter Motor's RPM or less
+  const int kMaxDrivetrainVelocityInRPM = kTargetedVelocityInRPM * kGearRatio;
+  
+  const int kMaxIntakeVelocityInRPM = 170; // to use only 85% of motor's capacity
+
+  // Wheels and Robot Dimensions
+  const double kWheelCircumferenceInMM = wheels_circumferences_mm::k4Inch;
+
+  // Track width is the distance between the robot’s right wheels’ center point and the robot’s left wheels’ center point.
+  const double kWheelTrackWidthInMM = 260; //! check this
+
+  // Wheelbase is the distance between the shafts of the two drive wheels (fear front and far back) on the robot’s side.
+  const double kWheelbaseInMM = 170; //! check this
+
+  // Sensors
+  const double kGPSXOffsetInMM = 0; // offset from the center of the robot
+  const double kGPSYOffsetInMM = 0; // offset from the center of the robot
+  
+  // 0 deg if the GPS camera is set in forward direction of the robot
+  // 90 deg if the GPS camera is set in the right direction of the robot
+  const double kGPSAngleOffsetInDegree = 0; // preferable to be at 180 degree
+}
 
 
 
-// define your global instances of motors and other devices here
+/*----------------------------------------------------------------------------*/
+/*                                Global Instances                            */
+/*----------------------------------------------------------------------------*/
+competition Competition; // A global instance of competition
+controller Controller1 = controller(primary);
+brain::lcd screen = vex::brain::lcd();
+
+// Drivetrain
 motor leftFrontMotor = motor(PORT3, ratio18_1, false);
 motor leftBackMotor = motor(PORT12, ratio18_1, false);
 motor_group LeftDriveSmart = motor_group(leftFrontMotor, leftBackMotor);
 motor rightFrontMotor = motor(PORT10, ratio18_1, true);
 motor rightBackMotor = motor(PORT13, ratio18_1, true);
 motor_group RightDriveSmart = motor_group(rightFrontMotor, rightBackMotor);
+drivetrain Drivetrain = drivetrain(LeftDriveSmart, RightDriveSmart, robot_specs::kWheelCircumferenceInMM, robot_specs::kWheelTrackWidthInMM, robot_specs::kWheelbaseInMM, mm, robot_specs::kGearRatio);
 
-//track width = 260, wheel base = 170
-drivetrain Drivetrain = drivetrain(LeftDriveSmart, RightDriveSmart, WHEEL_CIRCUMFERENCE, 260, 170, mm, GEAR_RATIO);
-
-controller Controller1 = controller(primary);
-brain::lcd screen = vex::brain::lcd();
+// Sensors
 vision visionSensor = vision(PORT7);
 triport Threewireport = triport(PORT22);
 limit switch_sensor = limit(Threewireport.A);
 inertial inertial_sensor = inertial(PORT16);
 
+// FlyWheel
 motor FlywheelA = motor(PORT4, ratio18_1, false);
 motor_group Flywheel = motor_group(FlywheelA);
 motor Armmotor = motor(PORT8, ratio18_1, false);
 
+// Wings
 motor wingmotor = motor(PORT11, ratio18_1, true);
 
-/*---------------------------------------------------------------------------*/
-/*                                                                           */
-/*                             Global Variables                              */
-/*                                                                           */
-/*                                                                           */
-/*---------------------------------------------------------------------------*/
-// define variable for remote controller enable/disable
-bool RemoteControlCodeEnabled = false;
+
+
+/*----------------------------------------------------------------------------*/
+/*                                Global Constants                            */
+/*----------------------------------------------------------------------------*/
+const float TURN_ANGLE_MOTOR_RATIO = 5.4;
+
+
+
+/*----------------------------------------------------------------------------*/
+/*                                Global Variables                            */
+/*----------------------------------------------------------------------------*/
+bool RemoteControlCodeEnabled = false; // define variable for remote controller enable/disable
 
 // custom global variables
 double obstacle_distance = 100000;
@@ -84,16 +122,17 @@ struct
   float theta = 0.0;
 } position;
 
+
+
 /*---------------------------------------------------------------------------*/
-/*                                                                           */
-/*                     Custom Function Prototypes                            */
-/*                                                                           */
-/*                                                                           */
+/*                        Custom Function Prototypes                         */
 /*---------------------------------------------------------------------------*/
 void face_angle_smooth(float target_angle = 50.0, float acceptable_error = 5);
 float get_speed_direction(const char *side);
 void switch_control_direction(time_t *controllerStartTimer);
 void auto_face_greentriball(vision visionSensor);
+
+
 
 /*---------------------------------------------------------------------------*/
 /*                          Pre-Autonomous Functions                         */
@@ -104,8 +143,7 @@ void auto_face_greentriball(vision visionSensor);
 /*  function is only called once after the V5 has been powered on and        */
 /*  not every time that the robot is disabled.                               */
 /*---------------------------------------------------------------------------*/
-void pre_auton(void)
-{
+void pre_auton(void) {
   // DO NOT REMOVE! Initializing Robot Configuration.
   vexcodeInit();
 
@@ -116,8 +154,12 @@ void pre_auton(void)
   return;
 }
 
-void armControlFunction()
-{
+
+
+/*----------------------------------------------------------------------------*/
+/*                               FlyWheel Functions                           */
+/*----------------------------------------------------------------------------*/
+void armControlFunction() {
   Armmotor.setVelocity(100, pct);
   if (armUp == 0)
   {
@@ -133,34 +175,27 @@ void armControlFunction()
   }
 }
 
-void flywheel(int speed)
-{
-  if (flywheelOn == 0)
-  {
+void flywheel(int speed) {
+  if (flywheelOn == 0) {
     FlywheelA.spin(vex::directionType::fwd, speed, vex::velocityUnits::pct);
     flywheelOn = 1;
-  }
-  else if (flywheelOn == 1)
-  {
+  } else if (flywheelOn == 1) {
     FlywheelA.stop(vex::brakeType::brake);
     flywheelOn = 0;
   }
 }
 
-/*---------------------------Wing Function-------------------------------*/
-
-void wingFunction()
-{
-  
-  if (WingExtended == 0)
-  {
+/*----------------------------------------------------------------------------*/
+/*                                 Wings Functions                            */
+/*----------------------------------------------------------------------------*/
+void wingFunction() {
+  if (WingExtended == 0) {
     wingmotor.setVelocity(40, pct);
     wingmotor.spinFor(directionType::fwd, 90, rotationUnits::deg);
     WingExtended = 1;
   }
 
-  else if (WingExtended == 1)
-  {
+  else if (WingExtended == 1) {
     wingmotor.setVelocity(10, pct);
     wingmotor.spinFor(directionType::fwd, -90, rotationUnits::deg);
     WingExtended = 0;
@@ -169,25 +204,25 @@ void wingFunction()
 }
 
 
-//mm to degrees
-float mm_to_deg(int distance_mm){
-    float rev = distance_mm / WHEEL_CIRCUMFERENCE;
+/*----------------------------------------------------------------------------*/
+/*                             Autonomous Functions                           */
+/*----------------------------------------------------------------------------*/double mm_to_deg(int distance_mm) {
+    double rev = distance_mm / robot_specs::kWheelCircumferenceInMM;
     return  rev * 360;
 }
 
-void moveForward(int distance_mm, int speed=200){
+void moveForward(int distance_mm, int speed = robot_specs::kMaxDrivetrainVelocityInRPM) {
 
     RightDriveSmart.resetPosition();
     LeftDriveSmart.resetPosition();
 
-    float dist_deg = mm_to_deg(distance_mm);
+    double dist_deg = mm_to_deg(distance_mm);
 
     RightDriveSmart.spinTo(dist_deg, deg, speed, rpm, false);
     LeftDriveSmart.spinTo(dist_deg, deg, speed, rpm, true);
 }
 
-void moveInCurve(double right, double left, int r_speed, int l_speed){
-
+void moveInCurve(double right, double left, int r_speed, int l_speed) {
     RightDriveSmart.resetPosition();
     LeftDriveSmart.resetPosition();
 
@@ -195,44 +230,41 @@ void moveInCurve(double right, double left, int r_speed, int l_speed){
     LeftDriveSmart.spinTo(left, deg, l_speed, rpm, true);
 }
 
-void turn_angle_2D(int angle, int speed=200){
+void turn_angle_2D(int angle, int speed = robot_specs::kMaxDrivetrainVelocityInRPM){
     RightDriveSmart.resetPosition();
     LeftDriveSmart.resetPosition();
 
-      float deg_angle = angle * 2.57;
+      double deg_angle = angle * 2.57;
       LeftDriveSmart.spinTo(deg_angle,  deg, speed, rpm, false);
       RightDriveSmart.spinTo(-deg_angle,  deg, speed, rpm);
 }
 
-void turn_angle_1D(int angle, int speed=200, bool reverse=false){
-    RightDriveSmart.resetPosition();
-    LeftDriveSmart.resetPosition();
+void turn_angle_1D(int angle, int speed = robot_specs::kMaxDrivetrainVelocityInRPM, bool reverse = false){
+  RightDriveSmart.resetPosition();
+  LeftDriveSmart.resetPosition();
 
-      float deg_angle = angle * 2.57;
+  double deg_angle = angle * 2.57;
 
-      if(reverse){
-          if (angle > 0){
-            LeftDriveSmart.spinTo(-deg_angle*2,  deg, speed, rpm);
-          }
-          else {
-            RightDriveSmart.spinTo(-deg_angle*2,  deg, speed, rpm);
-          }
-      }
-      else {
-          if (angle > 0){
-            LeftDriveSmart.spinTo(deg_angle*2,  deg, speed, rpm);
-          }
-          else {
-            RightDriveSmart.spinTo(deg_angle*2,  deg, speed, rpm);
-          }
-      }
-      
+  if (reverse) {
+    if (angle > 0) {
+      LeftDriveSmart.spinTo(-deg_angle*2,  deg, speed, rpm);
+    } else {
+      RightDriveSmart.spinTo(-deg_angle*2,  deg, speed, rpm);
+    }
+  } else {
+    if (angle > 0) {
+      LeftDriveSmart.spinTo(deg_angle*2,  deg, speed, rpm);
+    } else {
+      RightDriveSmart.spinTo(deg_angle*2,  deg, speed, rpm);
+    }
+  }
 }
+
+
 
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
 /*                             Autonomous Phase                              */
-/*                                                                           */
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
 void autonomous(void)
@@ -307,18 +339,15 @@ void usercontrol(void)
   /***************************************************************************/
   /*        Build functionalities for your Joystick inside the loop          */
   /***************************************************************************/
-  while (1)
-  {
+  while (1) {
     /*************************************************************************/
     /*                         Quick Buttons Set Up                          */
     /*************************************************************************/
-    if (Controller1.ButtonUp.pressing())
-    {
+    if (Controller1.ButtonUp.pressing()) {
       autonomous();
     }
 
-    if (Controller1.ButtonR2.pressing())
-    {
+    if (Controller1.ButtonR2.pressing()) {
       switch_control_direction(&controllerStartTimer);
     }
 
@@ -336,16 +365,13 @@ void usercontrol(void)
     /*************************************************************************/
     obstacle_distance = 100000;
 
-    if (obstacle_distance > 150 || Controller1.Axis1.position() < 0)
-    {
+    if (obstacle_distance > 150 || Controller1.Axis1.position() < 0) {
       RightDriveSmart.spin(vex::directionType::fwd,
                            get_speed_direction("right"),
                            vex::velocityUnits::pct);
       LeftDriveSmart.spin(vex::directionType::fwd, get_speed_direction("left"),
                           vex::velocityUnits::pct);
-    }
-    else
-    {
+    } else {
       RightDriveSmart.stop(vex::brakeType::brake);
       LeftDriveSmart.stop(vex::brakeType::brake);
     }
@@ -413,10 +439,10 @@ int main()
 /*                                                                           */
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
-void face_angle_smooth(float target_angle, float acceptable_error)
+void face_angle_smooth(double target_angle, double acceptable_error)
 {
-  float current_angle = inertial_sensor.heading();
-  float error_angle = current_angle - target_angle;
+  double current_angle = inertial_sensor.heading();
+  double error_angle = current_angle - target_angle;
   float motor_speed;
 
   while (std::abs(error_angle) > acceptable_error)
