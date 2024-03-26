@@ -82,10 +82,10 @@ inertial inertial_sensor = inertial(PORT16);
 // FlyWheel
 motor FlywheelA = motor(PORT4, ratio18_1, false);
 motor_group Flywheel = motor_group(FlywheelA);
-motor Armmotor = motor(PORT8, ratio18_1, false);
+motor ArmMotor = motor(PORT8, ratio18_1, false);
 
 // Wings
-motor wingmotor = motor(PORT11, ratio18_1, true);
+motor wingMotor = motor(PORT11, ratio18_1, true);
 
 
 
@@ -130,7 +130,7 @@ struct
 void face_angle_smooth(float target_angle = 50.0, float acceptable_error = 5);
 float get_speed_direction(const char *side);
 void switch_control_direction(time_t *controllerStartTimer);
-void auto_face_greentriball(vision visionSensor);
+void auto_face_green_triball(vision visionSensor);
 
 
 
@@ -160,18 +160,18 @@ void pre_auton(void) {
 /*                               FlyWheel Functions                           */
 /*----------------------------------------------------------------------------*/
 void armControlFunction() {
-  Armmotor.setVelocity(100, pct);
+  ArmMotor.setVelocity(100, pct);
   if (armUp == 0)
   {
-    Armmotor.spinFor(directionType::fwd, 3.4 * 360, rotationUnits::deg);
+    ArmMotor.spinFor(directionType::fwd, 3.4 * 360, rotationUnits::deg);
     armUp = 1;
   }
 
   else if (armUp == 1)
   {
-    Armmotor.spinFor(directionType::fwd, -3.4 * 360, rotationUnits::deg);
+    ArmMotor.spinFor(directionType::fwd, -3.4 * 360, rotationUnits::deg);
     armUp = 0;
-    Armmotor.setBrake(brakeType::hold);
+    ArmMotor.setBrake(brakeType::hold);
   }
 }
 
@@ -190,16 +190,16 @@ void flywheel(int speed) {
 /*----------------------------------------------------------------------------*/
 void wingFunction() {
   if (WingExtended == 0) {
-    wingmotor.setVelocity(40, pct);
-    wingmotor.spinFor(directionType::fwd, 90, rotationUnits::deg);
+    wingMotor.setVelocity(40, pct);
+    wingMotor.spinFor(directionType::fwd, 90, rotationUnits::deg);
     WingExtended = 1;
   }
 
   else if (WingExtended == 1) {
-    wingmotor.setVelocity(10, pct);
-    wingmotor.spinFor(directionType::fwd, -90, rotationUnits::deg);
+    wingMotor.setVelocity(10, pct);
+    wingMotor.spinFor(directionType::fwd, -90, rotationUnits::deg);
     WingExtended = 0;
-    wingmotor.setBrake(brakeType::hold);
+    wingMotor.setBrake(brakeType::hold);
   }
 }
 
@@ -326,7 +326,7 @@ void usercontrol(void)
   Drivetrain.setDriveVelocity(50, pct);
   Drivetrain.setTurnVelocity(25, pct);
   inertial_sensor.calibrate();
-  wingmotor.setBrake(brakeType::hold);
+  wingMotor.setBrake(brakeType::hold);
 
   while (inertial_sensor.isCalibrating())
   {
@@ -386,8 +386,8 @@ void usercontrol(void)
     /*************************************************************************/
     /*                            Temp Code                                  */
     /*************************************************************************/
-    screen.printAt(10, 20, "RightDrivesmart: %f", rightFrontMotor.position(deg));
-    screen.printAt(10, 50, "LeftDrivesmart: %f", leftFrontMotor.position(deg));
+    screen.printAt(10, 20, "RightDriveSmart: %f", rightFrontMotor.position(deg));
+    screen.printAt(10, 50, "LeftDriveSmart: %f", leftFrontMotor.position(deg));
 
     if (Controller1.ButtonL2.pressing())
     {
@@ -407,14 +407,13 @@ void usercontrol(void)
 /*                                                                           */
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
-int main()
-{
+int main() {
+  // Run the pre-autonomous function.
+  pre_auton();
+
   // Set up callbacks for autonomous and driver control periods.
   Competition.autonomous(autonomous);
   Competition.drivercontrol(usercontrol);
-
-  // Run the pre-autonomous function.
-  pre_auton();
 
   // Prevent main from exiting using an infinite loop.
   while (true)
@@ -496,7 +495,7 @@ void face_angle_smooth(double target_angle, double acceptable_error)
 // It will also move the robot toward the triball until collision is detected
 // with the front switch sensor take into account the location of the camera and
 // a margin error (optional)
-void auto_face_greentriball(vision visionSensor)
+void auto_face_green_triball(vision visionSensor)
 {
   int error_margin = 50, camera_x = 158;
 
