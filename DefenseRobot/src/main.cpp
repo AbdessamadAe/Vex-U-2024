@@ -16,51 +16,52 @@
 using namespace vex;
 
 namespace wheels_circumferences_mm {
-  const double k200Mm = 200;
-  const double k2_75Inch = 219.44;
-  const double k3_25Inch = 299.24;
-  const double k4Inch = 319.19;
-  const double k5Inch = 398.98;
-  const double k6Inch = 478.78;
-}
+const double k200Mm = 200;
+const double k2_75Inch = 219.44;
+const double k3_25Inch = 299.24;
+const double k4Inch = 319.19;
+const double k5Inch = 398.98;
+const double k6Inch = 478.78;
+}  // namespace wheels_circumferences_mm
 
 /*----------------------------------------------------------------------------*/
 /*                            Robot Specs (change them)                       */
 /*----------------------------------------------------------------------------*/
 namespace robot_specs {
-  // Mechanical Advantage
-  const int kDrivenGear = 12;
-  const int kDrivingGear = 12;
-  const double kGearRatio = (double) kDrivenGear / kDrivingGear;
-  const int kTargetedVelocityInRPM = 200; // if gear ratio = 1, enter Motor's RPM or less
-  const int kMaxDrivetrainVelocityInRPM = kTargetedVelocityInRPM * kGearRatio;
-  
-  const int kMaxIntakeVelocityInRPM = 170; // to use only 85% of motor's capacity
+// Mechanical Advantage
+const int kDrivenGear = 12;
+const int kDrivingGear = 12;
+const double kGearRatio = (double)kDrivenGear / kDrivingGear;
+const int kTargetedVelocityInRPM =
+    200;  // if gear ratio = 1, enter Motor's RPM or less
+const int kMaxDrivetrainVelocityInRPM = kTargetedVelocityInRPM * kGearRatio;
 
-  // Wheels and Robot Dimensions
-  const double kWheelCircumferenceInMM = wheels_circumferences_mm::k4Inch;
+const int kMaxIntakeVelocityInRPM = 170;  // to use only 85% of motor's capacity
 
-  // Track width is the distance between the robot’s right wheels’ center point and the robot’s left wheels’ center point.
-  const double kWheelTrackWidthInMM = 260; //! check this
+// Wheels and Robot Dimensions
+const double kWheelCircumferenceInMM = wheels_circumferences_mm::k4Inch;
 
-  // Wheelbase is the distance between the shafts of the two drive wheels (fear front and far back) on the robot’s side.
-  const double kWheelbaseInMM = 170; //! check this
+// Track width is the distance between the robot’s right wheels’ center point
+// and the robot’s left wheels’ center point.
+const double kWheelTrackWidthInMM = 260;  //! check this
 
-  // Sensors
-  const double kGPSXOffsetInMM = 0; // offset from the center of the robot
-  const double kGPSYOffsetInMM = 0; // offset from the center of the robot
-  
-  // 0 deg if the GPS camera is set in forward direction of the robot
-  // 90 deg if the GPS camera is set in the right direction of the robot
-  const double kGPSAngleOffsetInDegree = 0; // preferable to be at 180 degree
-}
+// Wheelbase is the distance between the shafts of the two drive wheels (fear
+// front and far back) on the robot’s side.
+const double kWheelbaseInMM = 170;  //! check this
 
+// Sensors
+const double kGPSXOffsetInMM = 0;  // offset from the center of the robot
+const double kGPSYOffsetInMM = 0;  // offset from the center of the robot
 
+// 0 deg if the GPS camera is set in forward direction of the robot
+// 90 deg if the GPS camera is set in the right direction of the robot
+const double kGPSAngleOffsetInDegree = 0;  // preferable to be at 180 degree
+}  // namespace robot_specs
 
 /*----------------------------------------------------------------------------*/
 /*                                Global Instances                            */
 /*----------------------------------------------------------------------------*/
-competition Competition; // A global instance of competition
+competition Competition;  // A global instance of competition
 controller Controller1 = controller(primary);
 brain::lcd screen = vex::brain::lcd();
 
@@ -71,7 +72,10 @@ motor_group LeftDriveSmart = motor_group(leftFrontMotor, leftBackMotor);
 motor rightFrontMotor = motor(PORT10, ratio18_1, true);
 motor rightBackMotor = motor(PORT13, ratio18_1, true);
 motor_group RightDriveSmart = motor_group(rightFrontMotor, rightBackMotor);
-drivetrain Drivetrain = drivetrain(LeftDriveSmart, RightDriveSmart, robot_specs::kWheelCircumferenceInMM, robot_specs::kWheelTrackWidthInMM, robot_specs::kWheelbaseInMM, mm, robot_specs::kGearRatio);
+drivetrain Drivetrain = drivetrain(
+    LeftDriveSmart, RightDriveSmart, robot_specs::kWheelCircumferenceInMM,
+    robot_specs::kWheelTrackWidthInMM, robot_specs::kWheelbaseInMM, mm,
+    robot_specs::kGearRatio);
 
 // Sensors
 vision visionSensor = vision(PORT7);
@@ -87,19 +91,16 @@ motor ArmMotor = motor(PORT8, ratio18_1, false);
 // Wings
 motor wingMotor = motor(PORT11, ratio18_1, true);
 
-
-
 /*----------------------------------------------------------------------------*/
 /*                                Global Constants                            */
 /*----------------------------------------------------------------------------*/
 const float TURN_ANGLE_MOTOR_RATIO = 5.4;
 
-
-
 /*----------------------------------------------------------------------------*/
 /*                                Global Variables                            */
 /*----------------------------------------------------------------------------*/
-bool RemoteControlCodeEnabled = false; // define variable for remote controller enable/disable
+bool RemoteControlCodeEnabled =
+    false;  // define variable for remote controller enable/disable
 
 // custom global variables
 double obstacle_distance = 100000;
@@ -115,14 +116,11 @@ int armUp = 0;
 int flywheelOn = 0;
 int WingExtended = 0;
 
-struct
-{
+struct {
   int X = 0;
   int Y = 0;
   float theta = 0.0;
 } position;
-
-
 
 /*---------------------------------------------------------------------------*/
 /*                        Custom Function Prototypes                         */
@@ -131,8 +129,6 @@ void face_angle_smooth(float target_angle = 50.0, float acceptable_error = 5);
 float get_speed_direction(const char *side);
 void switch_control_direction(time_t *controllerStartTimer);
 void auto_face_green_triball(vision visionSensor);
-
-
 
 /*---------------------------------------------------------------------------*/
 /*                          Pre-Autonomous Functions                         */
@@ -149,26 +145,21 @@ void pre_auton(void) {
 
   RightDriveSmart.setStopping(hold);
   LeftDriveSmart.setStopping(hold);
-  
 
   return;
 }
-
-
 
 /*----------------------------------------------------------------------------*/
 /*                               FlyWheel Functions                           */
 /*----------------------------------------------------------------------------*/
 void armControlFunction() {
   ArmMotor.setVelocity(100, pct);
-  if (armUp == 0)
-  {
+  if (armUp == 0) {
     ArmMotor.spinFor(directionType::fwd, 3.4 * 360, rotationUnits::deg);
     armUp = 1;
   }
 
-  else if (armUp == 1)
-  {
+  else if (armUp == 1) {
     ArmMotor.spinFor(directionType::fwd, -3.4 * 360, rotationUnits::deg);
     armUp = 0;
     ArmMotor.setBrake(brakeType::hold);
@@ -203,43 +194,46 @@ void wingFunction() {
   }
 }
 
-
 /*----------------------------------------------------------------------------*/
 /*                             Autonomous Functions                           */
-/*----------------------------------------------------------------------------*/double mm_to_deg(int distance_mm) {
-    double rev = distance_mm / robot_specs::kWheelCircumferenceInMM;
-    return  rev * 360;
+/*----------------------------------------------------------------------------*/
+double mm_to_deg(int distance_mm) {
+  double rev = distance_mm / robot_specs::kWheelCircumferenceInMM;
+  return rev * 360;
 }
 
-void moveForward(int distance_mm, int speed = robot_specs::kMaxDrivetrainVelocityInRPM) {
+void moveForward(int distance_mm,
+                 int speed = robot_specs::kMaxDrivetrainVelocityInRPM) {
+  RightDriveSmart.resetPosition();
+  LeftDriveSmart.resetPosition();
 
-    RightDriveSmart.resetPosition();
-    LeftDriveSmart.resetPosition();
+  double dist_deg = mm_to_deg(distance_mm);
 
-    double dist_deg = mm_to_deg(distance_mm);
-
-    RightDriveSmart.spinTo(dist_deg, deg, speed, rpm, false);
-    LeftDriveSmart.spinTo(dist_deg, deg, speed, rpm, true);
+  RightDriveSmart.spinTo(dist_deg, deg, speed, rpm, false);
+  LeftDriveSmart.spinTo(dist_deg, deg, speed, rpm, true);
 }
 
 void moveInCurve(double right, double left, int r_speed, int l_speed) {
-    RightDriveSmart.resetPosition();
-    LeftDriveSmart.resetPosition();
+  RightDriveSmart.resetPosition();
+  LeftDriveSmart.resetPosition();
 
-    RightDriveSmart.spinTo(right, deg, r_speed, rpm, false);
-    LeftDriveSmart.spinTo(left, deg, l_speed, rpm, true);
+  RightDriveSmart.spinTo(right, deg, r_speed, rpm, false);
+  LeftDriveSmart.spinTo(left, deg, l_speed, rpm, true);
 }
 
-void turn_angle_2D(int angle, int speed = robot_specs::kMaxDrivetrainVelocityInRPM){
-    RightDriveSmart.resetPosition();
-    LeftDriveSmart.resetPosition();
+void turn_angle_2D(int angle,
+                   int speed = robot_specs::kMaxDrivetrainVelocityInRPM) {
+  RightDriveSmart.resetPosition();
+  LeftDriveSmart.resetPosition();
 
-      double deg_angle = angle * 2.57;
-      LeftDriveSmart.spinTo(deg_angle,  deg, speed, rpm, false);
-      RightDriveSmart.spinTo(-deg_angle,  deg, speed, rpm);
+  double deg_angle = angle * 2.57;
+  LeftDriveSmart.spinTo(deg_angle, deg, speed, rpm, false);
+  RightDriveSmart.spinTo(-deg_angle, deg, speed, rpm);
 }
 
-void turn_angle_1D(int angle, int speed = robot_specs::kMaxDrivetrainVelocityInRPM, bool reverse = false){
+void turn_angle_1D(int angle,
+                   int speed = robot_specs::kMaxDrivetrainVelocityInRPM,
+                   bool reverse = false) {
   RightDriveSmart.resetPosition();
   LeftDriveSmart.resetPosition();
 
@@ -247,29 +241,26 @@ void turn_angle_1D(int angle, int speed = robot_specs::kMaxDrivetrainVelocityInR
 
   if (reverse) {
     if (angle > 0) {
-      LeftDriveSmart.spinTo(-deg_angle*2,  deg, speed, rpm);
+      LeftDriveSmart.spinTo(-deg_angle * 2, deg, speed, rpm);
     } else {
-      RightDriveSmart.spinTo(-deg_angle*2,  deg, speed, rpm);
+      RightDriveSmart.spinTo(-deg_angle * 2, deg, speed, rpm);
     }
   } else {
     if (angle > 0) {
-      LeftDriveSmart.spinTo(deg_angle*2,  deg, speed, rpm);
+      LeftDriveSmart.spinTo(deg_angle * 2, deg, speed, rpm);
     } else {
-      RightDriveSmart.spinTo(deg_angle*2,  deg, speed, rpm);
+      RightDriveSmart.spinTo(deg_angle * 2, deg, speed, rpm);
     }
   }
 }
-
-
 
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
 /*                             Autonomous Phase                              */
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
-void autonomous(void)
-{
-  //part 1
+void autonomous(void) {
+  // part 1
   turn_angle_2D(-5, 150);
   wait(0.2, sec);
   moveForward(950, 150);
@@ -295,7 +286,7 @@ void autonomous(void)
   moveForward(400, 200);
   wait(0.2, sec);
 
-  //part 2
+  // part 2
   moveForward(-700, 150);
   wait(0.2, sec);
   turn_angle_2D(75, 150);
@@ -308,9 +299,6 @@ void autonomous(void)
   wait(0.2, sec);
   moveForward(-1200, 150);
   wait(0.2, sec);
-  
-
-
 }
 
 /*---------------------------------------------------------------------------*/
@@ -319,8 +307,7 @@ void autonomous(void)
 /*                                                                           */
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
-void usercontrol(void)
-{
+void usercontrol(void) {
   LeftDriveSmart.setStopping(brakeType::hold);
   RightDriveSmart.setStopping(brakeType::hold);
   Drivetrain.setDriveVelocity(50, pct);
@@ -328,8 +315,7 @@ void usercontrol(void)
   inertial_sensor.calibrate();
   wingMotor.setBrake(brakeType::hold);
 
-  while (inertial_sensor.isCalibrating())
-  {
+  while (inertial_sensor.isCalibrating()) {
     wait(50, msec);
   }
 
@@ -351,14 +337,9 @@ void usercontrol(void)
       switch_control_direction(&controllerStartTimer);
     }
 
-
-
-    Controller1.ButtonX.pressed([]()
-                                { armControlFunction(); });
-    Controller1.ButtonY.pressed([]()
-                                { flywheel(100); });
-    Controller1.ButtonA.pressed([]()
-                                { wingFunction(); });
+    Controller1.ButtonX.pressed([]() { armControlFunction(); });
+    Controller1.ButtonY.pressed([]() { flywheel(100); });
+    Controller1.ButtonA.pressed([]() { wingFunction(); });
 
     /*************************************************************************/
     /*                              Drivetrain                               */
@@ -386,20 +367,20 @@ void usercontrol(void)
     /*************************************************************************/
     /*                            Temp Code                                  */
     /*************************************************************************/
-    screen.printAt(10, 20, "RightDriveSmart: %f", rightFrontMotor.position(deg));
+    screen.printAt(10, 20, "RightDriveSmart: %f",
+                   rightFrontMotor.position(deg));
     screen.printAt(10, 50, "LeftDriveSmart: %f", leftFrontMotor.position(deg));
 
-    if (Controller1.ButtonL2.pressing())
-    {
+    if (Controller1.ButtonL2.pressing()) {
       RightDriveSmart.resetPosition();
       LeftDriveSmart.resetPosition();
       Brain.Screen.clearScreen();
     }
 
     /******************************* END ************************************/
-    wait(20, msec); // Sleep the task to prevent wasted resources.
+    wait(20, msec);  // Sleep the task to prevent wasted resources.
   }
-} // the end of the user control mode
+}  // the end of the user control mode
 
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
@@ -416,21 +397,10 @@ int main() {
   Competition.drivercontrol(usercontrol);
 
   // Prevent main from exiting using an infinite loop.
-  while (true)
-  {
+  while (true) {
     wait(100, msec);
   }
-} // End of the Main function
-
-
-
-
-
-
-
-
-
-
+}  // End of the Main function
 
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
@@ -438,36 +408,25 @@ int main() {
 /*                                                                           */
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
-void face_angle_smooth(double target_angle, double acceptable_error)
-{
+void face_angle_smooth(double target_angle, double acceptable_error) {
   double current_angle = inertial_sensor.heading();
   double error_angle = current_angle - target_angle;
   float motor_speed;
 
-  while (std::abs(error_angle) > acceptable_error)
-  {
-    if (error_angle > 0)
-    {
-      if (error_angle <= 180)
-      {
+  while (std::abs(error_angle) > acceptable_error) {
+    if (error_angle > 0) {
+      if (error_angle <= 180) {
         // turn left
         motor_speed = error_angle * 0.5;
-      }
-      else
-      {
+      } else {
         // turn right
         motor_speed = -(360 - error_angle) * 0.5;
       }
-    }
-    else
-    {
-      if (-error_angle <= 180)
-      {
+    } else {
+      if (-error_angle <= 180) {
         // turn right
         motor_speed = error_angle * 0.5;
-      }
-      else
-      {
+      } else {
         motor_speed = (360 + error_angle) * 0.5;
       }
     }
@@ -480,8 +439,7 @@ void face_angle_smooth(double target_angle, double acceptable_error)
     // screen.printAt(10, 180, "Turning smoothly ....");
 
     // break the automated turning in case the robot stuck
-    if (Controller1.ButtonL1.pressing())
-    {
+    if (Controller1.ButtonL1.pressing()) {
       return;
     }
 
@@ -490,28 +448,23 @@ void face_angle_smooth(double target_angle, double acceptable_error)
 }
 
 // function for automatically staring the robot toward a detected green triball
-// given the visionSensor 
-//object that took the snapshot
+// given the visionSensor
+// object that took the snapshot
 // It will also move the robot toward the triball until collision is detected
 // with the front switch sensor take into account the location of the camera and
 // a margin error (optional)
-void auto_face_green_triball(vision visionSensor)
-{
+void auto_face_green_triball(vision visionSensor) {
   int error_margin = 50, camera_x = 158;
 
-  if (visionSensor.largestObject.exists)
-  {
+  if (visionSensor.largestObject.exists) {
     int triball_x = visionSensor.largestObject.centerX;
 
-    if (triball_x <= (camera_x - error_margin))
-    {
+    if (triball_x <= (camera_x - error_margin)) {
       // turn left
       float motor_speed = 25 * triball_x / camera_x;
       RightDriveSmart.spin(vex::directionType::fwd, motor_speed, pct);
       LeftDriveSmart.spin(vex::directionType::rev, motor_speed, pct);
-    }
-    else if (triball_x >= (camera_x + error_margin))
-    {
+    } else if (triball_x >= (camera_x + error_margin)) {
       // turn right
       float motor_speed = 25 * (1 - camera_x / triball_x);
       RightDriveSmart.spin(vex::directionType::rev, motor_speed, pct);
@@ -525,28 +478,22 @@ void auto_face_green_triball(vision visionSensor)
 // the controls are reversed or not reversing the controls specifically the
 // Axis1 is done by pressing R2 This can be useful for easier control of the
 // robots when its rotated 180 degrees
-float get_speed_direction(const char *side)
-{
-  if (reverserControl)
-  {
-    if (strcmp(side, "right"))
-    {
+float get_speed_direction(const char *side) {
+  if (reverserControl) {
+    if (strcmp(side, "right")) {
       return -Controller1.Axis3.position() + Controller1.Axis1.position();
     }
 
-    if (strcmp(side, "left"))
-    {
+    if (strcmp(side, "left")) {
       return -Controller1.Axis3.position() - Controller1.Axis1.position();
     }
   }
 
-  if (strcmp(side, "right"))
-  {
+  if (strcmp(side, "right")) {
     return Controller1.Axis3.position() + Controller1.Axis1.position();
   }
 
-  if (strcmp(side, "left"))
-  {
+  if (strcmp(side, "left")) {
     return Controller1.Axis3.position() - Controller1.Axis1.position();
   }
 
@@ -554,21 +501,16 @@ float get_speed_direction(const char *side)
 }
 
 // function to switch the controller flag after a 1 second cooldown
-void switch_control_direction(time_t *controllerStartTimer)
-{
+void switch_control_direction(time_t *controllerStartTimer) {
   time_t currentTime = time(NULL);
-  if (difftime(currentTime, *controllerStartTimer) < 1)
-  {
+  if (difftime(currentTime, *controllerStartTimer) < 1) {
     return;
   }
   *controllerStartTimer = time(NULL);
 
-  if (reverserControl)
-  {
+  if (reverserControl) {
     reverserControl = false;
-  }
-  else
-  {
+  } else {
     reverserControl = true;
   }
 }
