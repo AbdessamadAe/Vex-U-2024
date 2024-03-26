@@ -16,50 +16,51 @@
 using namespace vex;
 
 namespace wheels_circumferences_mm {
-  const double k200Mm = 200;
-  const double k2_75Inch = 219.44;
-  const double k3_25Inch = 299.24;
-  const double k4Inch = 319.19;
-  const double k5Inch = 398.98;
-  const double k6Inch = 478.78;
-}
+const double k200Mm = 200;
+const double k2_75Inch = 219.44;
+const double k3_25Inch = 299.24;
+const double k4Inch = 319.19;
+const double k5Inch = 398.98;
+const double k6Inch = 478.78;
+}  // namespace wheels_circumferences_mm
 
 /*----------------------------------------------------------------------------*/
 /*                            Robot Specs (change them)                       */
 /*----------------------------------------------------------------------------*/
 namespace robot_specs {
-  // Mechanical Advantage
-  const int kDrivenGear = 24;
-  const int kDrivingGear = 84;
-  const double kGearRatio = (double) kDrivenGear / kDrivingGear;
-  const int kTargetedVelocityInRPM = 450;
-  const int kMaxDrivetrainVelocityInRPM = kTargetedVelocityInRPM * kGearRatio;
-  
-  const int kMaxIntakeVelocityInRPM = 170; // to use only 85% of motor's capacity
+// Mechanical Advantage
+const int kDrivenGear = 24;
+const int kDrivingGear = 84;
+const double kGearRatio = (double)kDrivenGear / kDrivingGear;
+const int kTargetedVelocityInRPM = 450;
+const int kMaxDrivetrainVelocityInRPM = kTargetedVelocityInRPM * kGearRatio;
 
-  // Wheels and Robot Dimensions
-  const double kWheelCircumferenceInMM = wheels_circumferences_mm::k4Inch;
+const int kMaxIntakeVelocityInRPM = 170;  // to use only 85% of motor's capacity
 
-  // Track width is the distance between the robot’s right wheels’ center point and the robot’s left wheels’ center point.
-  const double kWheelTrackWidthInMM = 295; //! change this
+// Wheels and Robot Dimensions
+const double kWheelCircumferenceInMM = wheels_circumferences_mm::k4Inch;
 
-  // Wheelbase is the distance between the shafts of the two drive wheels (fear front and far back) on the robot’s side.
-  const double kWheelbaseInMM = 40; //! change this
+// Track width is the distance between the robot’s right wheels’ center point
+// and the robot’s left wheels’ center point.
+const double kWheelTrackWidthInMM = 295;  //! change this
 
-  // Sensors
-  const double kGPSXOffsetInMM = 0; // offset from the center of the robot
-  const double kGPSYOffsetInMM = 0; // offset from the center of the robot
-  
-  // 0 deg if the GPS camera is set in forward direction of the robot
-  // 90 deg if the GPS camera is set in the right direction of the robot
-  const double kGPSAngleOffsetInDegree = 0; // preferable to be at 180 degree
-}
+// Wheelbase is the distance between the shafts of the two drive wheels (fear
+// front and far back) on the robot’s side.
+const double kWheelbaseInMM = 40;  //! change this
 
+// Sensors
+const double kGPSXOffsetInMM = 0;  // offset from the center of the robot
+const double kGPSYOffsetInMM = 0;  // offset from the center of the robot
+
+// 0 deg if the GPS camera is set in forward direction of the robot
+// 90 deg if the GPS camera is set in the right direction of the robot
+const double kGPSAngleOffsetInDegree = 0;  // preferable to be at 180 degree
+}  // namespace robot_specs
 
 /*----------------------------------------------------------------------------*/
 /*                                Global Instances                            */
 /*----------------------------------------------------------------------------*/
-competition Competition; // A global instance of competition
+competition Competition;  // A global instance of competition
 controller Controller2 = controller(primary);
 
 // Drivetrain
@@ -69,9 +70,14 @@ motor rightFrontMotor = motor(PORT19, ratio18_1, true);
 motor rightBackMotor = motor(PORT14, ratio18_1, true);
 motor_group LeftDriveSmart = motor_group(leftFrontMotor, leftBackMotor);
 motor_group RightDriveSmart = motor_group(rightFrontMotor, rightBackMotor);
-drivetrain Drivetrain = drivetrain(LeftDriveSmart, RightDriveSmart, robot_specs::kWheelCircumferenceInMM, robot_specs::kWheelTrackWidthInMM, robot_specs::kWheelbaseInMM, mm, robot_specs::kGearRatio);
+drivetrain Drivetrain = drivetrain(
+    LeftDriveSmart, RightDriveSmart, robot_specs::kWheelCircumferenceInMM,
+    robot_specs::kWheelTrackWidthInMM, robot_specs::kWheelbaseInMM, mm,
+    robot_specs::kGearRatio);
 
-gps DrivetrainGPS = gps(PORT20, robot_specs::kGPSXOffsetInMM, robot_specs::kGPSYOffsetInMM, mm, robot_specs::kGPSAngleOffsetInDegree);
+gps DrivetrainGPS =
+    gps(PORT20, robot_specs::kGPSXOffsetInMM, robot_specs::kGPSYOffsetInMM, mm,
+        robot_specs::kGPSAngleOffsetInDegree);
 
 // Intake
 motor intakeMotor = motor(PORT10, ratio18_1, false);
@@ -81,12 +87,10 @@ motor rightWingMotor = motor(PORT15, ratio18_1, false);
 motor leftWingMotor = motor(PORT16, ratio18_1, true);
 motor_group wingMotors = motor_group(rightWingMotor, leftWingMotor);
 
-
 /*----------------------------------------------------------------------------*/
 /*                                Global Constants                            */
 /*----------------------------------------------------------------------------*/
 const float TURN_ANGLE_MOTOR_RATIO = 5.4;
-
 
 /*----------------------------------------------------------------------------*/
 /*                                Global Variables                            */
@@ -94,7 +98,6 @@ const float TURN_ANGLE_MOTOR_RATIO = 5.4;
 bool reverserControl = false;
 time_t controllerStartTimer = time(NULL);
 int WingsExtended = 0;
-
 
 /*---------------------------------------------------------------------------*/
 /*                               Shield Functions                            */
@@ -108,7 +111,7 @@ int WingsExtended = 0;
 //     shieldUp = 1;
 //   }
 
-//   else if (shieldUp == 1) { 
+//   else if (shieldUp == 1) {
 //     shieldMotor.setVelocity(10, rpm);
 //     shieldMotor.spinFor(directionType::fwd, -250, rotationUnits::deg);
 //     shieldUp = 0;
@@ -117,22 +120,22 @@ int WingsExtended = 0;
 //   }
 // }
 
-
 /*----------------------------------------------------------------------------*/
 /*                                Intake Functions                            */
 /*----------------------------------------------------------------------------*/
 void moveIntakeToInside() {
-  intakeMotor.spin(vex::directionType::fwd, robot_specs::kMaxIntakeVelocityInRPM, vex::velocityUnits::rpm);
+  intakeMotor.spin(vex::directionType::fwd,
+                   robot_specs::kMaxIntakeVelocityInRPM,
+                   vex::velocityUnits::rpm);
 }
 
 void moveIntakeToOutside() {
-  intakeMotor.spin(vex::directionType::fwd, -robot_specs::kMaxIntakeVelocityInRPM, vex::velocityUnits::rpm);
+  intakeMotor.spin(vex::directionType::fwd,
+                   -robot_specs::kMaxIntakeVelocityInRPM,
+                   vex::velocityUnits::rpm);
 }
 
-void stopIntake() {
-  intakeMotor.stop();
-}
-
+void stopIntake() { intakeMotor.stop(); }
 
 /*---------------------------------------------------------------------------*/
 /*                                Wings Functions                            */
@@ -152,8 +155,6 @@ void wingsFunction() {
     leftWingMotor.setBrake(brakeType::hold);
   }
 }
-
-
 
 /*---------------------------------------------------------------------------*/
 /*                          Pre-Autonomous Functions                         */
@@ -177,69 +178,69 @@ void pre_auton(void) {
   // Example: clearing encoders, setting servo positions, ...
 }
 
-
-
 /*---------------------------------------------------------------------------*/
 /*                            Autonomous Functions                           */
 /*---------------------------------------------------------------------------*/
-double mm_to_deg(int distance_mm) { 
-    double rev = distance_mm / robot_specs::kWheelCircumferenceInMM;
-    return  rev * 360;
+double mm_to_deg(int distance_mm) {
+  double rev = distance_mm / robot_specs::kWheelCircumferenceInMM;
+  return rev * 360;
 }
 
-void moveForward(int distance_mm, int speed=robot_specs::kMaxDrivetrainVelocityInRPM) {
-    RightDriveSmart.resetPosition();
-    LeftDriveSmart.resetPosition();
+void moveForward(int distance_mm,
+                 int speed = robot_specs::kMaxDrivetrainVelocityInRPM) {
+  RightDriveSmart.resetPosition();
+  LeftDriveSmart.resetPosition();
 
-    double dist_deg = -mm_to_deg(distance_mm) * 0.67; // need to be fine tuned
+  double dist_deg = -mm_to_deg(distance_mm) * 0.67;  // need to be fine tuned
 
-    RightDriveSmart.spinTo(dist_deg, deg, speed, rpm, false);
-    LeftDriveSmart.spinTo(dist_deg, deg, speed, rpm, true);
+  RightDriveSmart.spinTo(dist_deg, deg, speed, rpm, false);
+  LeftDriveSmart.spinTo(dist_deg, deg, speed, rpm, true);
 }
 
-void turn_angle_2D(int angle, int speed=robot_specs::kMaxDrivetrainVelocityInRPM) {
-    RightDriveSmart.resetPosition();
-    LeftDriveSmart.resetPosition();
+void turn_angle_2D(int angle,
+                   int speed = robot_specs::kMaxDrivetrainVelocityInRPM) {
+  RightDriveSmart.resetPosition();
+  LeftDriveSmart.resetPosition();
 
-      double deg_angle = -angle * 2.62;
-      LeftDriveSmart.spinTo(deg_angle,  deg, speed, rpm, false);
-      RightDriveSmart.spinTo(-deg_angle,  deg, speed, rpm);
+  double deg_angle = -angle * 2.62;
+  LeftDriveSmart.spinTo(deg_angle, deg, speed, rpm, false);
+  RightDriveSmart.spinTo(-deg_angle, deg, speed, rpm);
 }
 
-void turn_angle_1D(int angle, int speed=robot_specs::kMaxDrivetrainVelocityInRPM, bool reverse=false) {
-    RightDriveSmart.resetPosition();
-    LeftDriveSmart.resetPosition();
+void turn_angle_1D(int angle,
+                   int speed = robot_specs::kMaxDrivetrainVelocityInRPM,
+                   bool reverse = false) {
+  RightDriveSmart.resetPosition();
+  LeftDriveSmart.resetPosition();
 
-      double deg_angle = -angle * 2.62;
+  double deg_angle = -angle * 2.62;
 
-      if(reverse){
-          if (angle > 0){
-            LeftDriveSmart.spinTo(-deg_angle*2,  deg, speed, rpm);
-          }
-          else {
-            RightDriveSmart.spinTo(-deg_angle*2,  deg, speed, rpm);
-          }
-      }
-      else {
-          if (angle > 0){
-            LeftDriveSmart.spinTo(deg_angle*2,  deg, speed, rpm);
-          }
-          else {
-            RightDriveSmart.spinTo(deg_angle*2,  deg, speed, rpm);
-          }
-      }
+  if (reverse) {
+    if (angle > 0) {
+      LeftDriveSmart.spinTo(-deg_angle * 2, deg, speed, rpm);
+    } else {
+      RightDriveSmart.spinTo(-deg_angle * 2, deg, speed, rpm);
+    }
+  } else {
+    if (angle > 0) {
+      LeftDriveSmart.spinTo(deg_angle * 2, deg, speed, rpm);
+    } else {
+      RightDriveSmart.spinTo(deg_angle * 2, deg, speed, rpm);
+    }
+  }
 }
 
-void auto_intake_eject(int rotations = 360, bool wait = true, int speed = robot_specs::kMaxIntakeVelocityInRPM) {
+void auto_intake_eject(int rotations = 360, bool wait = true,
+                       int speed = robot_specs::kMaxIntakeVelocityInRPM) {
   intakeMotor.resetPosition();
   intakeMotor.spinTo(-rotations, deg, speed, rpm, wait);
 }
 
-void auto_intake_grab(int rotations = 360, bool wait = true, int speed = robot_specs::kMaxIntakeVelocityInRPM) {
+void auto_intake_grab(int rotations = 360, bool wait = true,
+                      int speed = robot_specs::kMaxIntakeVelocityInRPM) {
   intakeMotor.resetPosition();
   intakeMotor.spinTo(rotations, deg, speed, rpm, wait);
 }
-
 
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
@@ -265,7 +266,7 @@ void autonomous(void) {
   wait(0.2, sec);
   auto_intake_eject(2500, false);
   wait(0.2, sec);
-  moveForward(400); 
+  moveForward(400);
   wait(0.2, sec);
 
   moveForward(-300, 150);
@@ -294,7 +295,6 @@ void autonomous(void) {
   wait(0.2, sec);
   auto_intake_eject(2500);
 }
-
 
 /*----------------------------------------------------------------------------*/
 /*                    Drive Control Specific Functions                        */
@@ -335,7 +335,6 @@ void switch_control_direction(time_t *controllerStartTimer) {
   }
 }
 
-
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
 /*                              User Control Task                            */
@@ -344,27 +343,29 @@ void switch_control_direction(time_t *controllerStartTimer) {
 void usercontrol(void) {
   LeftDriveSmart.setStopping(brakeType::hold);
   RightDriveSmart.setStopping(brakeType::hold);
-  Drivetrain.setDriveVelocity(robot_specs::kMaxDrivetrainVelocityInRPM, vex::velocityUnits::rpm);
-
+  Drivetrain.setDriveVelocity(robot_specs::kMaxDrivetrainVelocityInRPM,
+                              vex::velocityUnits::rpm);
 
   // User control code here, inside the loop
   while (1) {
-    // we multiple by a targeted velocity and divide by 100, so we can convert the percentage into rpm. And 100% is the max drivetrain velocity in reality
+    // we multiple by a targeted velocity and divide by 100, so we can convert
+    // the percentage into rpm. And 100% is the max drivetrain velocity in
+    // reality
     RightDriveSmart.spin(vex::directionType::fwd,
-                         get_speed_direction("right") * robot_specs::kMaxDrivetrainVelocityInRPM / 100,
+                         get_speed_direction("right") *
+                             robot_specs::kMaxDrivetrainVelocityInRPM / 100,
                          vex::velocityUnits::rpm);
 
-    LeftDriveSmart.spin(vex::directionType::fwd, get_speed_direction("left") * robot_specs::kMaxDrivetrainVelocityInRPM / 100,
+    LeftDriveSmart.spin(vex::directionType::fwd,
+                        get_speed_direction("left") *
+                            robot_specs::kMaxDrivetrainVelocityInRPM / 100,
                         vex::velocityUnits::rpm);
-
-
 
     // Controller2.ButtonX.pressed([]()
     //                             { openAndCloseShield(); });
 
-    Controller2.ButtonA.pressed([]()
-                                { wingsFunction(); });
-    
+    Controller2.ButtonA.pressed([]() { wingsFunction(); });
+
     if (Controller2.ButtonR2.pressing()) {
       autonomous();
     }
@@ -385,7 +386,6 @@ void usercontrol(void) {
   }
 }
 
-
 int main() {
   // Set up callbacks for autonomous and driver control periods.
   Competition.autonomous(autonomous);
@@ -395,8 +395,7 @@ int main() {
   pre_auton();
 
   // Prevent main from exiting with an infinite loop.
-  while (true)
-  {
+  while (true) {
     wait(100, msec);
   }
 }
@@ -419,9 +418,11 @@ void drive_to_with_gps(double x_target, double y_target) {
     return;
   }
 
-  double magnitude = sqrt(x_distance_to_drive * x_distance_to_drive + y_distance_to_drive * y_distance_to_drive);
+  double magnitude = sqrt(x_distance_to_drive * x_distance_to_drive +
+y_distance_to_drive * y_distance_to_drive);
 
-  double angle = std::asin((std::sin(M_PI / 2.0) * x_distance_to_drive) / magnitude) * 180.0 / M_PI;
+  double angle = std::asin((std::sin(M_PI / 2.0) * x_distance_to_drive) /
+magnitude) * 180.0 / M_PI;
 
   if (y_distance_to_drive < 0) {
     angle = 180 - angle;
@@ -441,13 +442,13 @@ void gps_drive_test() {
   double x_target = 1.3;
   double y_target = 0.5;
 
-  while (gps_sensor.xPosition(mm) != x_target || gps_sensor.yPosition(mm) != y_target) {
-    if (gps_sensor.xPosition(mm) > x_target-0.05 || gps_sensor.xPosition(mm) < x_target+0.05) {
-      return;
+  while (gps_sensor.xPosition(mm) != x_target || gps_sensor.yPosition(mm) !=
+y_target) { if (gps_sensor.xPosition(mm) > x_target-0.05 ||
+gps_sensor.xPosition(mm) < x_target+0.05) { return;
     }
 
-    if (gps_sensor.yPosition(mm) > y_target-0.05 || gps_sensor.yPosition(mm) < y_target+0.05) {
-      return;
+    if (gps_sensor.yPosition(mm) > y_target-0.05 || gps_sensor.yPosition(mm) <
+y_target+0.05) { return;
     }
 
     drive_to_with_gps(x_target, y_target);
@@ -467,7 +468,8 @@ void gps_drive_test() {
 /*                                                                          */
 /****************************************************************************/
 
-// unused functions ==============================================================================
+// unused functions
+// ==============================================================================
 int current_motor_angle_left = 0;
 int current_motor_angle_right = 0;
 double d = 0;
@@ -486,20 +488,20 @@ void track_location() {
   // the distance between the front center and the right and left wheel
   dtheta = 0;
 
-  // get the distance travelled by the left and right wheel by getting the change in angle then to mm
-  float dr = (rightFrontMotor.position(deg) - current_motor_angle_right) * (M_PI * wheeldiam) / 360;
-  float dl = (leftFrontMotor.position(deg) - current_motor_angle_left) * (M_PI * wheeldiam) / 360;
+  // get the distance travelled by the left and right wheel by getting the
+  // change in angle then to mm
+  float dr = (rightFrontMotor.position(deg) - current_motor_angle_right) *
+             (M_PI * wheeldiam) / 360;
+  float dl = (leftFrontMotor.position(deg) - current_motor_angle_left) *
+             (M_PI * wheeldiam) / 360;
 
   // calculating the change in the orientation of the robot
   dtheta = (dr - dl) / (2 * rw);
   // calulating the distance travelled by the entire robot
 
-  if (std::abs(dtheta) <= 0.01)
-  {
+  if (std::abs(dtheta) <= 0.01) {
     d = (dr + dl) / 2;
-  }
-  else
-  {
+  } else {
     d = 2 * (dr / dtheta + rw) * sin(dtheta / 2);
     position.theta += dtheta;
   }
@@ -512,4 +514,3 @@ void track_location() {
   Brain.Screen.printAt(10, 180, "Theta: %f", position.theta * 180 / M_PI);
   Brain.Screen.printAt(10, 210, "dtheta: %f", dtheta * 180 / M_PI);
 }
-
