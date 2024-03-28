@@ -42,11 +42,11 @@ const double kWheelCircumferenceInMM = wheels_circumferences_mm::k4Inch;
 
 // Track width is the distance between the robot’s right wheels’ center point
 // and the robot’s left wheels’ center point.
-const double kWheelTrackWidthInMM = 295;  //! change this
+const double kWheelTrackWidthInMM = 298;
 
 // Wheelbase is the distance between the shafts of the two drive wheels (fear
 // front and far back) on the robot’s side.
-const double kWheelbaseInMM = 40;  //! change this
+const double kWheelbaseInMM = 255;
 
 // Sensors
 const double kGPSXOffsetInMM = 0;  // offset from the center of the robot
@@ -83,9 +83,9 @@ gps DrivetrainGPS =
 motor intakeMotor = motor(PORT10, ratio18_1, false);
 
 // Wing
-motor rightWingMotor = motor(PORT15, ratio18_1, false);
-motor leftWingMotor = motor(PORT16, ratio18_1, true);
-motor_group wingMotors = motor_group(rightWingMotor, leftWingMotor);
+// motor rightWingMotor = motor(PORT15, ratio18_1, false);
+// motor leftWingMotor = motor(PORT16, ratio18_1, true);
+// motor_group wingMotors = motor_group(rightWingMotor, leftWingMotor);
 
 /*----------------------------------------------------------------------------*/
 /*                                Global Constants                            */
@@ -97,28 +97,7 @@ const float TURN_ANGLE_MOTOR_RATIO = 5.4;
 /*----------------------------------------------------------------------------*/
 bool reverserControl = false;
 time_t controllerStartTimer = time(NULL);
-int WingsExtended = 0;
-
-/*---------------------------------------------------------------------------*/
-/*                               Shield Functions                            */
-/*---------------------------------------------------------------------------*/
-// int shieldUp = 0;
-
-// void openAndCloseShield() {
-//   if (shieldUp == 0) {
-//     shieldMotor.setVelocity(50, rpm);
-//     shieldMotor.spinFor(directionType::fwd, 250, rotationUnits::deg);
-//     shieldUp = 1;
-//   }
-
-//   else if (shieldUp == 1) {
-//     shieldMotor.setVelocity(10, rpm);
-//     shieldMotor.spinFor(directionType::fwd, -250, rotationUnits::deg);
-//     shieldUp = 0;
-//     shieldMotorA.setBrake(brakeType::hold);
-//     shieldMotorB.setBrake(brakeType::hold);
-//   }
-// }
+// int WingsExtended = 0;
 
 /*----------------------------------------------------------------------------*/
 /*                                Intake Functions                            */
@@ -130,8 +109,8 @@ void moveIntakeToInside() {
 }
 
 void moveIntakeToOutside() {
-  intakeMotor.spin(vex::directionType::fwd,
-                   -robot_specs::kMaxIntakeVelocityInRPM,
+  intakeMotor.spin(vex::directionType::reverse,
+                   robot_specs::kMaxIntakeVelocityInRPM,
                    vex::velocityUnits::rpm);
 }
 
@@ -140,21 +119,21 @@ void stopIntake() { intakeMotor.stop(); }
 /*---------------------------------------------------------------------------*/
 /*                                Wings Functions                            */
 /*---------------------------------------------------------------------------*/
-void wingsFunction() {
-  if (WingsExtended == 0) {
-    wingMotors.setVelocity(20, pct);
-    wingMotors.spinFor(directionType::fwd, 145, rotationUnits::deg);
-    WingsExtended = 1;
-  }
+// void wingsFunction() {
+//   if (WingsExtended == 0) {
+//     wingMotors.setVelocity(20, pct);
+//     wingMotors.spinFor(directionType::fwd, 145, rotationUnits::deg);
+//     WingsExtended = 1;
+//   }
 
-  else if (WingsExtended == 1) {
-    wingMotors.setVelocity(20, pct);
-    wingMotors.spinFor(directionType::fwd, -145, rotationUnits::deg);
-    WingsExtended = 0;
-    rightWingMotor.setBrake(brakeType::hold);
-    leftWingMotor.setBrake(brakeType::hold);
-  }
-}
+//   else if (WingsExtended == 1) {
+//     wingMotors.setVelocity(20, pct);
+//     wingMotors.spinFor(directionType::fwd, -145, rotationUnits::deg);
+//     WingsExtended = 0;
+//     rightWingMotor.setBrake(brakeType::hold);
+//     leftWingMotor.setBrake(brakeType::hold);
+//   }
+// }
 
 /*---------------------------------------------------------------------------*/
 /*                          Pre-Autonomous Functions                         */
@@ -349,8 +328,7 @@ void usercontrol(void) {
   // User control code here, inside the loop
   while (1) {
     // we multiple by a targeted velocity and divide by 100, so we can convert
-    // the percentage into rpm. And 100% is the max drivetrain velocity in
-    // reality
+    // the percentage into rpm. All this to not exceed the targeted velocity.
     RightDriveSmart.spin(vex::directionType::fwd,
                          get_speed_direction("right") *
                              robot_specs::kMaxDrivetrainVelocityInRPM / 100,
@@ -361,10 +339,7 @@ void usercontrol(void) {
                             robot_specs::kMaxDrivetrainVelocityInRPM / 100,
                         vex::velocityUnits::rpm);
 
-    // Controller2.ButtonX.pressed([]()
-    //                             { openAndCloseShield(); });
-
-    Controller2.ButtonA.pressed([]() { wingsFunction(); });
+    // Controller2.ButtonA.pressed([]() { wingsFunction(); });
 
     if (Controller2.ButtonR2.pressing()) {
       autonomous();
@@ -372,7 +347,9 @@ void usercontrol(void) {
 
     if (Controller2.ButtonR1.pressing()) {
       moveIntakeToInside();
-    } else if (Controller2.ButtonL1.pressing()) {
+    }
+
+    if (Controller2.ButtonL1.pressing()) {
       moveIntakeToOutside();
     } else {
       stopIntake();
