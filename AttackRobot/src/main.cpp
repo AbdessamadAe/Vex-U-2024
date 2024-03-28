@@ -34,6 +34,7 @@ const int kDrivingGear = 84;
 const double kGearRatio = (double)kDrivenGear / kDrivingGear;
 const int kTargetedVelocityInRPM = 450;
 const int kMaxDrivetrainVelocityInRPM = kTargetedVelocityInRPM * kGearRatio;
+const int kMotorPercentMax = ((kMaxDrivetrainVelocityInRPM * 100) / 200) / 100;
 
 const int kMaxIntakeVelocityInRPM = 170;  // to use only 85% of motor's capacity
 
@@ -330,14 +331,13 @@ void usercontrol(void) {
     // we multiple by a targeted velocity and divide by 100, so we can convert
     // the percentage into rpm. All this to not exceed the targeted velocity.
     RightDriveSmart.spin(vex::directionType::fwd,
-                         get_speed_direction("right") *
-                             robot_specs::kMaxDrivetrainVelocityInRPM / 100,
-                         vex::velocityUnits::rpm);
+                         get_speed_direction("right") * robot_specs::kMotorPercentMax,
+                         vex::velocityUnits::pct);
 
     LeftDriveSmart.spin(vex::directionType::fwd,
-                        get_speed_direction("left") *
-                            robot_specs::kMaxDrivetrainVelocityInRPM / 100,
-                        vex::velocityUnits::rpm);
+                        get_speed_direction("left") * robot_specs::kMotorPercentMax
+                           ,
+                        vex::velocityUnits::pct);
 
     // Controller2.ButtonA.pressed([]() { wingsFunction(); });
 
