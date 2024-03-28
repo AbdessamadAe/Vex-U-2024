@@ -103,13 +103,13 @@ time_t controllerStartTimer = time(NULL);
 /*                                Intake Functions                            */
 /*----------------------------------------------------------------------------*/
 void moveIntakeToInside() {
-  intakeMotor.spin(vex::directionType::fwd,
+  intakeMotor.spin(vex::directionType::rev,
                    robot_specs::kMaxIntakeVelocityInRPM,
                    vex::velocityUnits::rpm);
 }
 
 void moveIntakeToOutside() {
-  intakeMotor.spin(vex::directionType::reverse,
+  intakeMotor.spin(vex::directionType::fwd,
                    robot_specs::kMaxIntakeVelocityInRPM,
                    vex::velocityUnits::rpm);
 }
@@ -348,10 +348,10 @@ void usercontrol(void) {
     if (Controller2.ButtonR1.pressing()) {
       moveIntakeToInside();
     }
-
-    if (Controller2.ButtonL1.pressing()) {
+    else if (Controller2.ButtonL1.pressing()) {
       moveIntakeToOutside();
-    } else {
+    } 
+    else {
       stopIntake();
     }
 
