@@ -16,12 +16,12 @@
 using namespace vex;
 
 namespace wheels_circumferences_mm {
-const double k200Mm = 200;
-const double k2_75Inch = 219.44;
-const double k3_25Inch = 299.24;
-const double k4Inch = 319.19;
-const double k5Inch = 398.98;
-const double k6Inch = 478.78;
+const double k200MmWheels = 200;
+const double k2_75InchWheels = 219.44;
+const double k3_25InchWheels = 299.24;
+const double k4InchWheels = 319.19;
+const double k5InchWheels = 398.98;
+const double k6InchWheels = 478.78;
 }  // namespace wheels_circumferences_mm
 
 /*----------------------------------------------------------------------------*/
@@ -37,10 +37,10 @@ const int kMaxDrivetrainVelocityInRPM = kTargetedVelocityInRPM * kGearRatio;
 const double kMaxDrivetrainVelocityInPCT =
     (double)((kMaxDrivetrainVelocityInRPM * 100) / (double)200) / (double)100;
 
-const int kMaxIntakeVelocityInRPM = 170;  // to use only 85% of motor's capacity
+const int kMaxIntakeVelocityInRPM = 170;  // use only 85% of motor's capacity
 
 // Wheels and Robot Dimensions
-const double kWheelCircumferenceInMM = wheels_circumferences_mm::k4Inch;
+const double kWheelCircumferenceInMM = wheels_circumferences_mm::k4InchWheels;
 
 // Track width is the distance between the robot’s right wheels’ center point
 // and the robot’s left wheels’ center point.
