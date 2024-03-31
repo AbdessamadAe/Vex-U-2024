@@ -46,8 +46,8 @@ const double kWheelCircumferenceInMM = wheels_circumferences_mm::k4Inch;
 // and the robot’s left wheels’ center point.
 const double kWheelTrackWidthInMM = 298;
 
-// Wheelbase is the distance between the shafts of the two drive wheels (fear
-// front and far back) on the robot’s side.
+// Wheelbase is the distance between the shafts of the foremost wheel and the
+// rearmost wheel
 const double kWheelbaseInMM = 255;
 
 // Sensors
