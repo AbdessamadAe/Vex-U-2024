@@ -132,7 +132,8 @@ struct {
 void face_angle_smooth(float target_angle = 50.0, float acceptable_error = 5);
 float get_speed_direction(const char *side);
 void switch_control_direction(time_t *controllerStartTimer);
-void auto_face_green_triball(vision visionSensor);
+int auto_face_green_triball(vision visionSensor);
+void auton_facegreenball();
 
 /*---------------------------------------------------------------------------*/
 /*                          Pre-Autonomous Functions                         */
@@ -186,13 +187,13 @@ void flywheel(int speed) {
 void wingFunction() {
   if (WingExtended == 0) {
     wingMotor.setVelocity(40, pct);
-    wingMotor.spinFor(directionType::fwd, 90, rotationUnits::deg);
+    wingMotor.spinFor(directionType::fwd, -100, rotationUnits::deg);
     WingExtended = 1;
   }
 
   else if (WingExtended == 1) {
     wingMotor.setVelocity(10, pct);
-    wingMotor.spinFor(directionType::fwd, -90, rotationUnits::deg);
+    wingMotor.spinFor(directionType::fwd, 100, rotationUnits::deg);
     WingExtended = 0;
     wingMotor.setBrake(brakeType::hold);
   }
@@ -263,13 +264,15 @@ void turn_angle_1D(int angle,
 /*                             Autonomous Phase                              */
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
-void autonomous(void) {
-  // part 1
+
+void auton_part1(){
+  //start must be as close as possible to the vertical black bar with the front part exactly with the limit permissible
+
   turn_angle_2D(-5, 150);
   wait(0.2, sec);
-  moveForward(950, 150);
+  moveForward(1100, 150);
   wait(0.2, sec);
-  turn_angle_2D(95, 150);
+  turn_angle_2D(95, 120);
   wait(0.2, sec);
   wingFunction();
   wait(0.2, sec);
@@ -279,16 +282,26 @@ void autonomous(void) {
   wait(0.2, sec);
   moveForward(-300, 150);
   wait(0.2, sec);
-  moveForward(400, 200);
+  moveForward(400, 150);
   wait(0.2, sec);
   moveForward(-300, 150);
   wait(0.2, sec);
-  moveForward(400, 200);
+  turn_angle_2D(10, 150);
   wait(0.2, sec);
-  moveForward(-300, 150);
+  moveForward(400, 150);
   wait(0.2, sec);
-  moveForward(400, 200);
-  wait(0.2, sec);
+
+  //should end exactly at the limit possible with the horizental black bar, front looking at the bar
+
+}
+
+
+void autonomous(void) {
+
+  // part 1
+  auton_part1();
+
+  return;
 
   // part 2
   moveForward(-700, 150);
@@ -381,6 +394,7 @@ void usercontrol(void) {
       Brain.Screen.clearScreen();
     }
 
+    // auton_facegreenball();
     /******************************* END ************************************/
     wait(20, msec);  // Sleep the task to prevent wasted resources.
   }
@@ -457,10 +471,11 @@ void face_angle_smooth(double target_angle, double acceptable_error) {
 // It will also move the robot toward the triball until collision is detected
 // with the front switch sensor take into account the location of the camera and
 // a margin error (optional)
-void auto_face_green_triball(vision visionSensor) {
+int auto_face_green_triball(vision visionSensor) {
   int error_margin = 50, camera_x = 158;
 
   if (visionSensor.largestObject.exists) {
+    screen.print("Green Object Detected");
     int triball_x = visionSensor.largestObject.centerX;
 
     if (triball_x <= (camera_x - error_margin)) {
@@ -468,14 +483,29 @@ void auto_face_green_triball(vision visionSensor) {
       float motor_speed = 25 * triball_x / camera_x;
       RightDriveSmart.spin(vex::directionType::fwd, motor_speed, pct);
       LeftDriveSmart.spin(vex::directionType::rev, motor_speed, pct);
+      return 0;
     } else if (triball_x >= (camera_x + error_margin)) {
       // turn right
       float motor_speed = 25 * (1 - camera_x / triball_x);
       RightDriveSmart.spin(vex::directionType::rev, motor_speed, pct);
       LeftDriveSmart.spin(vex::directionType::fwd, motor_speed, pct);
+      return 0;
+    }
+    else {
+        return 1;
     }
   }
-  return;
+  return 1;
+}
+
+
+void auton_facegreenball(){
+  int stop = 0;
+  while(stop == 0){
+    visionSensor.takeSnapshot(GREENTRIBALL);
+    stop = auto_face_green_triball(visionSensor);
+  }
+ 
 }
 
 // function to get the speed for the rotation of the motors depending on wether
