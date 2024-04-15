@@ -10,7 +10,6 @@
 // ---- START VEXCODE CONFIGURED DEVICES ----
 // ---- END VEXCODE CONFIGURED DEVICES ----
 #include <cmath>
-#include <cmath>
 
 #include "vex.h"
 
@@ -170,82 +169,14 @@ void pnematicWings(bool v) {
 bool RemoteControlCodeEnabled = true;
 
 void pre_auton(void) {
-void pre_auton(void) {
   // Initializing Robot Configuration. DO NOT REMOVE!
   vexcodeInit();
 
   LeftDriveSmart.setStopping(brakeType::hold);
   RightDriveSmart.setStopping(brakeType::hold);
 
-  LeftDriveSmart.setStopping(brakeType::hold);
-  RightDriveSmart.setStopping(brakeType::hold);
-
   // All activities that occur before the competition starts
   // Example: clearing encoders, setting servo positions, ...
-}
-
-/*---------------------------------------------------------------------------*/
-/*                            Autonomous Functions                           */
-/*---------------------------------------------------------------------------*/
-double mm_to_deg(int distance_mm) {
-  double rev = distance_mm / robot_specs::kWheelCircumferenceInMM;
-  return rev * 360;
-}
-
-void moveForward(int distance_mm,
-                 int speed = robot_specs::kMaxDrivetrainVelocityInRPM) {
-  RightDriveSmart.resetPosition();
-  LeftDriveSmart.resetPosition();
-
-  double dist_deg = -mm_to_deg(distance_mm) * 0.67;  // need to be fine tuned
-
-  RightDriveSmart.spinTo(dist_deg, deg, speed, rpm, false);
-  LeftDriveSmart.spinTo(dist_deg, deg, speed, rpm, true);
-}
-
-void turn_angle_2D(int angle,
-                   int speed = robot_specs::kMaxDrivetrainVelocityInRPM) {
-  RightDriveSmart.resetPosition();
-  LeftDriveSmart.resetPosition();
-
-  double deg_angle = -angle * 2.62;
-  LeftDriveSmart.spinTo(deg_angle, deg, speed, rpm, false);
-  RightDriveSmart.spinTo(-deg_angle, deg, speed, rpm);
-}
-
-void turn_angle_1D(int angle,
-                   int speed = robot_specs::kMaxDrivetrainVelocityInRPM,
-                   bool reverse = false) {
-  RightDriveSmart.resetPosition();
-  LeftDriveSmart.resetPosition();
-
-  double deg_angle = -angle * 2.62;
-
-  if (reverse) {
-    if (angle > 0) {
-      LeftDriveSmart.spinTo(-deg_angle * 2, deg, speed, rpm);
-    } else {
-      RightDriveSmart.spinTo(-deg_angle * 2, deg, speed, rpm);
-    }
-  } else {
-    if (angle > 0) {
-      LeftDriveSmart.spinTo(deg_angle * 2, deg, speed, rpm);
-    } else {
-      RightDriveSmart.spinTo(deg_angle * 2, deg, speed, rpm);
-    }
-  }
-}
-
-void auto_intake_eject(int rotations = 360, bool wait = true,
-                       int speed = robot_specs::kMaxIntakeVelocityInRPM) {
-  intakeMotor.resetPosition();
-  intakeMotor.spinTo(-rotations, deg, speed, rpm, wait);
-}
-
-void auto_intake_grab(int rotations = 360, bool wait = true,
-                      int speed = robot_specs::kMaxIntakeVelocityInRPM) {
-  intakeMotor.resetPosition();
-  intakeMotor.spinTo(rotations, deg, speed, rpm, wait);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -403,92 +334,6 @@ void switch_control_direction(time_t *controllerStartTimer) {
   } else {
     reverserControl = true;
   }
-void autonomous(void) {
-  vexcodeInit();
-
-  LeftDriveSmart.setStopping(brakeType::hold);
-  RightDriveSmart.setStopping(brakeType::hold);
-
-  // new automation
-  moveForward(-700, 150);
-  wait(0.2, sec);
-  turn_angle_2D(-36, 150);
-  wait(0.2, sec);
-  moveForward(-700, 200);
-  wait(0.2, sec);
-  turn_angle_2D(-62, 150);
-  wait(0.2, sec);
-  moveForward(-100, 100);
-  wait(0.2, sec);
-  auto_intake_eject(2500, false);
-  wait(0.2, sec);
-  moveForward(400);
-  wait(0.2, sec);
-
-  moveForward(-300, 150);
-  wait(0.2, sec);
-  turn_angle_2D(180, 100);
-  wait(0.2, sec);
-  moveForward(-400, 150);
-  wait(0.2, sec);
-  turn_angle_2D(-35);
-  wait(0.2, sec);
-  auto_intake_grab(5000, false);
-  moveForward(750, 125);
-  wait(0.2, sec);
-  moveForward(250, 40);
-  wait(0.7, sec);
-  moveForward(-100, 40);
-  wait(0.2, sec);
-  moveForward(100, 40);
-  wait(0.7, sec);
-
-  moveForward(-400, 150);
-  wait(0.2, sec);
-  turn_angle_2D(135, 150);
-  wait(0.2, sec);
-  moveForward(200, 150);
-  wait(0.2, sec);
-  auto_intake_eject(2500);
-}
-
-/*----------------------------------------------------------------------------*/
-/*                    Drive Control Specific Functions                        */
-/*----------------------------------------------------------------------------*/
-double get_speed_direction(const char *side) {
-  if (reverserControl) {
-    if (strcmp(side, "right")) {
-      return Controller2.Axis3.position(pct) - Controller2.Axis1.position(pct);
-    }
-
-    if (strcmp(side, "left")) {
-      return Controller2.Axis3.position(pct) + Controller2.Axis1.position(pct);
-    }
-  }
-
-  if (strcmp(side, "right")) {
-    return -Controller2.Axis3.position(pct) - Controller2.Axis1.position(pct);
-  }
-
-  if (strcmp(side, "left")) {
-    return -Controller2.Axis3.position(pct) + Controller2.Axis1.position(pct);
-  }
-
-  return 0;
-}
-
-void switch_control_direction(time_t *controllerStartTimer) {
-  time_t currentTime = time(NULL);
-  if (difftime(currentTime, *controllerStartTimer) < 1) {
-    return;
-  }
-  *controllerStartTimer = time(NULL);
-
-  if (reverserControl) {
-    reverserControl = false;
-  } else {
-    reverserControl = true;
-  }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -496,7 +341,6 @@ void switch_control_direction(time_t *controllerStartTimer) {
 /*                              User Control Task                            */
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
-void usercontrol(void) {
 void usercontrol(void) {
   LeftDriveSmart.setStopping(brakeType::hold);
   RightDriveSmart.setStopping(brakeType::hold);
@@ -556,7 +400,6 @@ int main() {
 
   // Prevent main from exiting with an infinite loop.
   while (true) {
-  while (true) {
     wait(100, msec);
   }
 }
@@ -581,11 +424,7 @@ void drive_to_with_gps(double x_target, double y_target) {
 
   double magnitude = sqrt(x_distance_to_drive * x_distance_to_drive +
 y_distance_to_drive * y_distance_to_drive);
-  double magnitude = sqrt(x_distance_to_drive * x_distance_to_drive +
-y_distance_to_drive * y_distance_to_drive);
 
-  double angle = std::asin((std::sin(M_PI / 2.0) * x_distance_to_drive) /
-magnitude) * 180.0 / M_PI;
   double angle = std::asin((std::sin(M_PI / 2.0) * x_distance_to_drive) /
 magnitude) * 180.0 / M_PI;
 
@@ -610,26 +449,17 @@ void gps_drive_test() {
   while (gps_sensor.xPosition(mm) != x_target || gps_sensor.yPosition(mm) !=
 y_target) { if (gps_sensor.xPosition(mm) > x_target-0.05 ||
 gps_sensor.xPosition(mm) < x_target+0.05) { return;
-  while (gps_sensor.xPosition(mm) != x_target || gps_sensor.yPosition(mm) !=
-y_target) { if (gps_sensor.xPosition(mm) > x_target-0.05 ||
-gps_sensor.xPosition(mm) < x_target+0.05) { return;
     }
 
     if (gps_sensor.yPosition(mm) > y_target-0.05 || gps_sensor.yPosition(mm) <
 y_target+0.05) { return;
-    if (gps_sensor.yPosition(mm) > y_target-0.05 || gps_sensor.yPosition(mm) <
-y_target+0.05) { return;
     }
-
 
     drive_to_with_gps(x_target, y_target);
   }
 }
 */
 
-// if (Controller2.ButtonB.pressing()) {
-//   gps_drive_test();
-// }
 // if (Controller2.ButtonB.pressing()) {
 //   gps_drive_test();
 // }
@@ -644,11 +474,8 @@ y_target+0.05) { return;
 
 // unused functions
 // ==============================================================================
-// unused functions
-// ==============================================================================
 int current_motor_angle_left = 0;
 int current_motor_angle_right = 0;
-double d = 0;
 double d = 0;
 float rw = 385 / 2;
 float wheeldiam = 101.6;
@@ -656,23 +483,15 @@ float dtheta = 0;
 int stop = 0;
 
 struct {
-struct {
   int X = 0;
   int Y = 0;
   float theta = 0.0;
 } position;
 
 void track_location() {
-void track_location() {
   // the distance between the front center and the right and left wheel
   dtheta = 0;
 
-  // get the distance travelled by the left and right wheel by getting the
-  // change in angle then to mm
-  float dr = (rightFrontMotor.position(deg) - current_motor_angle_right) *
-             (M_PI * wheeldiam) / 360;
-  float dl = (leftFrontMotor.position(deg) - current_motor_angle_left) *
-             (M_PI * wheeldiam) / 360;
   // get the distance travelled by the left and right wheel by getting the
   // change in angle then to mm
   float dr = (rightFrontMotor.position(deg) - current_motor_angle_right) *
@@ -685,9 +504,7 @@ void track_location() {
   // calulating the distance travelled by the entire robot
 
   if (std::abs(dtheta) <= 0.01) {
-  if (std::abs(dtheta) <= 0.01) {
     d = (dr + dl) / 2;
-  } else {
   } else {
     d = 2 * (dr / dtheta + rw) * sin(dtheta / 2);
     position.theta += dtheta;
