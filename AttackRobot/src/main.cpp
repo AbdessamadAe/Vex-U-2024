@@ -9,160 +9,153 @@
 
 // ---- START VEXCODE CONFIGURED DEVICES ----
 // ---- END VEXCODE CONFIGURED DEVICES ----
+#include <cmath>
 
 #include "vex.h"
-#include <cmath>
+
 
 using namespace vex;
 
-// A global instance of competition
-competition Competition;
-int GEAR_RATIO = 3; // 84/48;
-float WHEEL_DIAMETER = 101.6;
-float WHEEL_CIRCUMFERENCE = WHEEL_DIAMETER  * M_PI;
-float TURN_ANGLE_MOTOR_RATIO = 5.4;
+brain Brain;
 
-// define your global instances of motors and other devices here
-motor leftMotorA = motor(PORT9, ratio18_1, false);
-motor leftMotorB = motor(PORT1, ratio18_1, false);
-motor rightMotorA = motor(PORT12, ratio18_1, true);
-motor rightMotorB = motor(PORT2, ratio18_1, true);
-motor_group LeftDriveSmart = motor_group(leftMotorA, leftMotorB);
-motor_group RightDriveSmart = motor_group(rightMotorA, rightMotorB);
-drivetrain Drivetrain = drivetrain(LeftDriveSmart, RightDriveSmart, WHEEL_CIRCUMFERENCE, 390, 315, mm, GEAR_RATIO);
+digital_out DigitalOutA = digital_out(Brain.ThreeWirePort.B);
+digital_out DigitalOutB = digital_out(Brain.ThreeWirePort.A);
+
+namespace wheels_circumferences_mm {
+const double k200Mm = 200;
+const double k2_75Inch = 219.44;
+const double k3_25Inch = 299.24;
+const double k4Inch = 319.19;
+const double k5Inch = 398.98;
+const double k6Inch = 478.78;
+}  // namespace wheels_circumferences_mm
+
+/*----------------------------------------------------------------------------*/
+/*                            Robot Specs (change them)                       */
+/*----------------------------------------------------------------------------*/
+namespace robot_specs {
+// Mechanical Advantage
+const int kDrivenGear = 24;
+const int kDrivingGear = 84;
+const double kGearRatio = (double)kDrivenGear / kDrivingGear;
+const int kTargetedVelocityInRPM = 357;
+const int kMaxDrivetrainVelocityInRPM = kTargetedVelocityInRPM * kGearRatio;
+const double kMaxDrivetrainVelocityInPCT =
+    (double)((kMaxDrivetrainVelocityInRPM * 100) / (double)200) / (double)100;
+
+const int kMaxIntakeVelocityInRPM = 170;  // to use only 85% of motor's capacity
+
+// Wheels and Robot Dimensions
+const double kWheelCircumferenceInMM = wheels_circumferences_mm::k4Inch;
+
+// Track width is the distance between the robot’s right wheels’ center point
+// and the robot’s left wheels’ center point.
+const double kWheelTrackWidthInMM = 298;
+
+// Wheelbase is the distance between the shafts of the two drive wheels (fear
+// front and far back) on the robot’s side.
+const double kWheelbaseInMM = 255;
+
+// Sensors
+const double kGPSXOffsetInMM = 0;  // offset from the center of the robot
+const double kGPSYOffsetInMM = 0;  // offset from the center of the robot
+
+// 0 deg if the GPS camera is set in forward direction of the robot
+// 90 deg if the GPS camera is set in the right direction of the robot
+const double kGPSAngleOffsetInDegree = 0;  // preferable to be at 180 degree
+}  // namespace robot_specs
+
+/*----------------------------------------------------------------------------*/
+/*                                Global Instances                            */
+/*----------------------------------------------------------------------------*/
+competition Competition;  // A global instance of competition
 controller Controller2 = controller(primary);
-motor intakeMotorA = motor(PORT10, ratio18_1, false);
-motor intakeMotorB = motor(PORT20, ratio18_1, true);
-motor_group intake = motor_group(intakeMotorA, intakeMotorB);
-motor shieldMotorA = motor(PORT11, ratio18_1, false);
-motor shieldMotorB = motor(PORT3, ratio18_1, true);
-motor_group shieldMotor = motor_group(shieldMotorA, shieldMotorB);
 
-motor wingmotorA = motor(PORT15, ratio18_1, false);
-motor wingmotorB = motor(PORT16, ratio18_1, true);
-motor_group wingmotors = motor_group(wingmotorA, wingmotorB);
+// Drivetrain
+motor leftFrontMotor = motor(PORT1, ratio18_1, false);
+motor leftBackMotor = motor(PORT11, ratio18_1, false);
+motor rightFrontMotor = motor(PORT19, ratio18_1, true);
+motor rightBackMotor = motor(PORT14, ratio18_1, true);
+motor_group LeftDriveSmart = motor_group(leftFrontMotor, leftBackMotor);
+motor_group RightDriveSmart = motor_group(rightFrontMotor, rightBackMotor);
+drivetrain Drivetrain = drivetrain(
+    LeftDriveSmart, RightDriveSmart, robot_specs::kWheelCircumferenceInMM,
+    robot_specs::kWheelTrackWidthInMM, robot_specs::kWheelbaseInMM, mm,
+    robot_specs::kGearRatio);
 
-int auton = 0;
+gps DrivetrainGPS =
+    gps(PORT20, robot_specs::kGPSXOffsetInMM, robot_specs::kGPSYOffsetInMM, mm,
+        robot_specs::kGPSAngleOffsetInDegree);
+
+// Intake
+motor intakeMotor = motor(PORT10, ratio18_1, false);
 
 
-int shiledUp = 0;
-int WingsExtended = 0;
+
+// Wing
+// motor rightWingMotor = motor(PORT15, ratio18_1, false);
+// motor leftWingMotor = motor(PORT16, ratio18_1, true);
+// motor_group wingMotors = motor_group(rightWingMotor, leftWingMotor);
+
+/*----------------------------------------------------------------------------*/
+/*                                Global Constants                            */
+/*----------------------------------------------------------------------------*/
+const float TURN_ANGLE_MOTOR_RATIO = 5.4;
+
+/*----------------------------------------------------------------------------*/
+/*                                Global Variables                            */
+/*----------------------------------------------------------------------------*/
 bool reverserControl = false;
 time_t controllerStartTimer = time(NULL);
+// int WingsExtended = 0;
+
+/*----------------------------------------------------------------------------*/
+/*                                Intake Functions                            */
+/*----------------------------------------------------------------------------*/
+void moveIntakeToInside() {
+  intakeMotor.spin(vex::directionType::rev,
+                   robot_specs::kMaxIntakeVelocityInRPM,
+                   vex::velocityUnits::rpm);
+}
+
+void moveIntakeToOutside() {
+  intakeMotor.spin(vex::directionType::fwd,
+                   robot_specs::kMaxIntakeVelocityInRPM,
+                   vex::velocityUnits::rpm);
+}
+
+void stopIntake() { intakeMotor.stop(); }
 
 
 /*---------------------------------------------------------------------------*/
-/*                                Intake Function                           */
+/*                                Wings Pneu Functions                            */
+/*---------------------------------------------------------------------------*/
+bool on = false;
 
-void intakeGrabe()
-{
-  intake.spin(vex::directionType::fwd, 200, vex::velocityUnits::rpm);
-}
+void pnematicWings(bool v) {
+  DigitalOutA.set(v);
+  DigitalOutB.set(v);
 
-void intakeReverse()
-{
-  intake.spin(vex::directionType::fwd, -200, vex::velocityUnits::rpm);
-}
-
-void stopIntake()
-{
-  intake.stop();
 }
 
 /*---------------------------------------------------------------------------*/
-/*                            Autonomous Functions                           */
+/*                                Wings Functions                            */
+/*---------------------------------------------------------------------------*/
+// void wingsFunction() {
+//   if (WingsExtended == 0) {
+//     wingMotors.setVelocity(20, pct);
+//     wingMotors.spinFor(directionType::fwd, 145, rotationUnits::deg);
+//     WingsExtended = 1;
+//   }
 
-// elementary autonoumous movements
-
-//========================================================================================
-//========================================================================================
-
-// function to activate the shield
-void shieldControlFunction()
-{
-  if (shiledUp == 0)
-  {
-    shieldMotor.setVelocity(50, rpm);
-    shieldMotor.spinFor(directionType::fwd, 250, rotationUnits::deg);
-    shiledUp = 1;
-  }
-
-  else if (shiledUp == 1)
-  { 
-    shieldMotor.setVelocity(10, rpm);
-    shieldMotor.spinFor(directionType::fwd, -250, rotationUnits::deg);
-    shiledUp = 0;
-    shieldMotorA.setBrake(brakeType::hold);
-    shieldMotorB.setBrake(brakeType::hold);
-  }
-}
-
-void wingsFunction()
-{
-  
-  if (WingsExtended == 0)
-  {
-    wingmotors.setVelocity(20, pct);
-    wingmotors.spinFor(directionType::fwd, 145, rotationUnits::deg);
-    WingsExtended = 1;
-  }
-
-  else if (WingsExtended == 1)
-  {
-    wingmotors.setVelocity(20, pct);
-    wingmotors.spinFor(directionType::fwd, -145, rotationUnits::deg);
-    WingsExtended = 0;
-    wingmotorA.setBrake(brakeType::hold);
-    wingmotorB.setBrake(brakeType::hold);
-  }
-}
-
-float get_speed_direction(const char *side)
-{
-  if (reverserControl)
-  {
-    if (strcmp(side, "right"))
-    {
-      return Controller2.Axis3.position() - Controller2.Axis1.position();
-    }
-
-    if (strcmp(side, "left"))
-    {
-      return Controller2.Axis3.position() + Controller2.Axis1.position();
-    }
-  }
-
-  if (strcmp(side, "right"))
-  {
-    return -Controller2.Axis3.position() - Controller2.Axis1.position();
-  }
-
-  if (strcmp(side, "left"))
-  {
-    return -Controller2.Axis3.position() + Controller2.Axis1.position();
-  }
-
-  return 0;
-}
-
-void switch_control_direction(time_t *controllerStartTimer)
-{
-  time_t currentTime = time(NULL);
-  if (difftime(currentTime, *controllerStartTimer) < 1)
-  {
-    return;
-  }
-  *controllerStartTimer = time(NULL);
-
-  if (reverserControl)
-  {
-    reverserControl = false;
-  }
-  else
-  {
-    reverserControl = true;
-  }
-}
+//   else if (WingsExtended == 1) {
+//     wingMotors.setVelocity(20, pct);
+//     wingMotors.spinFor(directionType::fwd, -145, rotationUnits::deg);
+//     WingsExtended = 0;
+//     rightWingMotor.setBrake(brakeType::hold);
+//     leftWingMotor.setBrake(brakeType::hold);
+//   }
+// }
 
 /*---------------------------------------------------------------------------*/
 /*                          Pre-Autonomous Functions                         */
@@ -175,8 +168,7 @@ void switch_control_direction(time_t *controllerStartTimer)
 /*---------------------------------------------------------------------------*/
 bool RemoteControlCodeEnabled = true;
 
-void pre_auton(void)
-{
+void pre_auton(void) {
   // Initializing Robot Configuration. DO NOT REMOVE!
   vexcodeInit();
 
@@ -188,130 +180,109 @@ void pre_auton(void)
 }
 
 /*---------------------------------------------------------------------------*/
+/*                            Autonomous Functions                           */
+/*---------------------------------------------------------------------------*/
+double mm_to_deg(int distance_mm) {
+  double rev = distance_mm / robot_specs::kWheelCircumferenceInMM;
+  return rev * 360;
+}
+
+void moveForward(int distance_mm,
+                 int speed = robot_specs::kMaxDrivetrainVelocityInRPM) {
+  RightDriveSmart.resetPosition();
+  LeftDriveSmart.resetPosition();
+
+  double dist_deg = -mm_to_deg(distance_mm) * 0.67;  // need to be fine tuned
+
+  RightDriveSmart.spinTo(dist_deg, deg, speed, rpm, false);
+  LeftDriveSmart.spinTo(dist_deg, deg, speed, rpm, true);
+}
+
+void turn_angle_2D(int angle,
+                   int speed = robot_specs::kMaxDrivetrainVelocityInRPM) {
+  RightDriveSmart.resetPosition();
+  LeftDriveSmart.resetPosition();
+
+  double deg_angle = -angle * 2.62;
+  LeftDriveSmart.spinTo(deg_angle, deg, speed, rpm, false);
+  RightDriveSmart.spinTo(-deg_angle, deg, speed, rpm);
+}
+
+void turn_angle_1D(int angle,
+                   int speed = robot_specs::kMaxDrivetrainVelocityInRPM,
+                   bool reverse = false) {
+  RightDriveSmart.resetPosition();
+  LeftDriveSmart.resetPosition();
+
+  double deg_angle = -angle * 2.62;
+
+  if (reverse) {
+    if (angle > 0) {
+      LeftDriveSmart.spinTo(-deg_angle * 2, deg, speed, rpm);
+    } else {
+      RightDriveSmart.spinTo(-deg_angle * 2, deg, speed, rpm);
+    }
+  } else {
+    if (angle > 0) {
+      LeftDriveSmart.spinTo(deg_angle * 2, deg, speed, rpm);
+    } else {
+      RightDriveSmart.spinTo(deg_angle * 2, deg, speed, rpm);
+    }
+  }
+}
+
+void auto_intake_eject(int rotations = 360, bool wait = true,
+                       int speed = robot_specs::kMaxIntakeVelocityInRPM) {
+  intakeMotor.resetPosition();
+  intakeMotor.spinTo(-rotations, deg, speed, rpm, wait);
+}
+
+void auto_intake_grab(int rotations = 360, bool wait = true,
+                      int speed = robot_specs::kMaxIntakeVelocityInRPM) {
+  intakeMotor.resetPosition();
+  intakeMotor.spinTo(rotations, deg, speed, rpm, wait);
+}
+
+/*---------------------------------------------------------------------------*/
 /*                                                                           */
 /*                              Autonomous Task                              */
 /*                                                                           */
-/*  This task is used to control your robot during the autonomous phase of   */
-/*  a VEX Competition.                                                       */
-/*                                                                           */
-/*  You must modify the code to add your own robot specific commands here.   */
 /*---------------------------------------------------------------------------*/
-
-
-//mm to degrees
-float mm_to_deg(int distance_mm){
-    float rev = distance_mm / WHEEL_CIRCUMFERENCE;
-    return  rev * 360;
-}
-
-void moveForward(int distance_mm, int speed=200){
-
-    RightDriveSmart.resetPosition();
-    LeftDriveSmart.resetPosition();
-
-    float dist_deg = -mm_to_deg(distance_mm) * 0.67; // need to be fine tuned
-
-    RightDriveSmart.spinTo(dist_deg, deg, speed, rpm, false);
-    LeftDriveSmart.spinTo(dist_deg, deg, speed, rpm, true);
-}
-
-void turn_angle_2D(int angle, int speed=200){
-    RightDriveSmart.resetPosition();
-    LeftDriveSmart.resetPosition();
-
-      float deg_angle = -angle * 2.62;
-      LeftDriveSmart.spinTo(deg_angle,  deg, speed, rpm, false);
-      RightDriveSmart.spinTo(-deg_angle,  deg, speed, rpm);
-}
-
-void turn_angle_1D(int angle, int speed=200, bool reverse=false){
-    RightDriveSmart.resetPosition();
-    LeftDriveSmart.resetPosition();
-
-      float deg_angle = -angle * 2.62;
-
-      if(reverse){
-          if (angle > 0){
-            LeftDriveSmart.spinTo(-deg_angle*2,  deg, speed, rpm);
-          }
-          else {
-            RightDriveSmart.spinTo(-deg_angle*2,  deg, speed, rpm);
-          }
-      }
-      else {
-          if (angle > 0){
-            LeftDriveSmart.spinTo(deg_angle*2,  deg, speed, rpm);
-          }
-          else {
-            RightDriveSmart.spinTo(deg_angle*2,  deg, speed, rpm);
-          }
-      }
-      
-}
-
-void auto_intake_eject(int rotations=360, bool wait=true, int speed=200){
-  intake.resetPosition();
-  intake.spinTo(-rotations, deg, speed, rpm, wait);
-}
-
-void auto_intake_grab(int rotations=360, bool wait=true, int speed=200){
-  intake.resetPosition();
-  intake.spinTo(rotations, deg, speed, rpm, wait);
-}
-
-
-void autonomous(void)
-{
+void autonomous(void) {
   vexcodeInit();
-  auton = 1;
 
   LeftDriveSmart.setStopping(brakeType::hold);
   RightDriveSmart.setStopping(brakeType::hold);
-  
-  moveForward(-1130, 150);
-  wait(0.2, sec);
-  turn_angle_2D(-45, 100);
-  moveForward(-150, 50);
-  wait(0.2, sec);
-  turn_angle_2D(-50, 100);
-  moveForward(150, 50);
-  wait(0.2, sec);
+
   // new automation
-  moveForward(-200, 130);
+  moveForward(-700, 150);
   wait(0.2, sec);
-  turn_angle_2D(-20, 100);
+  turn_angle_2D(-36, 150);
   wait(0.2, sec);
-  moveForward(-500, 130);
+  moveForward(-700, 200);
   wait(0.2, sec);
-  turn_angle_2D(-17, 100);
+  turn_angle_2D(-62, 150);
   wait(0.2, sec);
-  // hit the 4 triballs
-  moveForward(-800, 160);
+  moveForward(-100, 100);
   wait(0.2, sec);
-  //
-  turn_angle_2D(-50, 100);
-  wait(0.2, sec);
-  moveForward(-200, 100);
+  auto_intake_eject(2500, false);
   wait(0.2, sec);
   moveForward(400);
   wait(0.2, sec);
-  auto_intake_eject(2500, false);
-  wait(2, sec);
 
-  moveForward(-250, 150);
+  moveForward(-300, 150);
   wait(0.2, sec);
-  turn_angle_2D(180, 50);
+  turn_angle_2D(180, 100);
   wait(0.2, sec);
-  moveForward(-600, 150);
+  moveForward(-400, 150);
   wait(0.2, sec);
-  turn_angle_2D(-37);
+  turn_angle_2D(-35);
   wait(0.2, sec);
   auto_intake_grab(5000, false);
-  moveForward(700, 75);
+  moveForward(750, 125);
   wait(0.2, sec);
   moveForward(250, 40);
   wait(0.7, sec);
-  //now ball is in, its gonna go back to score it
   moveForward(-100, 40);
   wait(0.2, sec);
   moveForward(100, 40);
@@ -324,80 +295,102 @@ void autonomous(void)
   moveForward(200, 150);
   wait(0.2, sec);
   auto_intake_eject(2500);
-  wait(2, sec);
-  moveForward(-300, 150);
-  wait(0.2, sec);
-  turn_angle_2D(135, 150);
-  wait(0.2, sec);
-  moveForward(-500, 150);
-  wait(0.2, sec);
+}
+
+/*----------------------------------------------------------------------------*/
+/*                    Drive Control Specific Functions                        */
+/*----------------------------------------------------------------------------*/
+double get_speed_direction(const char *side) {
+  if (reverserControl) {
+    if (strcmp(side, "right")) {
+      return Controller2.Axis3.position(pct) - Controller2.Axis1.position(pct);
+    }
+
+    if (strcmp(side, "left")) {
+      return Controller2.Axis3.position(pct) + Controller2.Axis1.position(pct);
+    }
+  }
+
+  if (strcmp(side, "right")) {
+    return -Controller2.Axis3.position(pct) - Controller2.Axis1.position(pct);
+  }
+
+  if (strcmp(side, "left")) {
+    return -Controller2.Axis3.position(pct) + Controller2.Axis1.position(pct);
+  }
+
+  return 0;
+}
+
+void switch_control_direction(time_t *controllerStartTimer) {
+  time_t currentTime = time(NULL);
+  if (difftime(currentTime, *controllerStartTimer) < 1) {
+    return;
+  }
+  *controllerStartTimer = time(NULL);
+
+  if (reverserControl) {
+    reverserControl = false;
+  } else {
+    reverserControl = true;
+  }
 }
 
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
 /*                              User Control Task                            */
 /*                                                                           */
-/*  This task is used to control your robot during the user control phase of */
-/*  a VEX Competition.                                                       */
-/*                                                                           */
-/*  You must modify the code to add your own gprobot specific commands here.   */
 /*---------------------------------------------------------------------------*/
-
-void usercontrol(void)
-{
+void usercontrol(void) {
   LeftDriveSmart.setStopping(brakeType::hold);
   RightDriveSmart.setStopping(brakeType::hold);
+  Drivetrain.setDriveVelocity(robot_specs::kMaxDrivetrainVelocityInRPM,
+                              vex::velocityUnits::rpm);
+
+  DigitalOutA.set(false);
+  DigitalOutB.set(false);
+  
 
   // User control code here, inside the loop
-  while (1)
-  {
-    // This is the main execution loop for the user control program.
-    // Each time through the loop your program should update motor + servo
-    // values based on feedback from the joysticks.
+  while (1) {
+    // we multiple by a targeted velocity and divide by 100, so we can convert
+    // the percentage into rpm. All this to not exceed the targeted velocity.
+    RightDriveSmart.spin(
+        vex::directionType::fwd,
+        get_speed_direction("right") * robot_specs::kMaxDrivetrainVelocityInPCT,
+        vex::velocityUnits::pct);
 
-    RightDriveSmart.spin(vex::directionType::fwd,
-                         get_speed_direction("right"),
-                         vex::velocityUnits::pct);
-    LeftDriveSmart.spin(vex::directionType::fwd, get_speed_direction("left"),
-                        vex::velocityUnits::pct);
+    LeftDriveSmart.spin(
+        vex::directionType::fwd,
+        get_speed_direction("left") * robot_specs::kMaxDrivetrainVelocityInPCT,
+        vex::velocityUnits::pct);
 
+    // Controller2.ButtonA.pressed([]() { wingsFunction(); });
 
-    Controller2.ButtonX.pressed([]()
-                                { shieldControlFunction(); });
-
-    Controller2.ButtonA.pressed([]()
-                                { wingsFunction(); });
-    
-    if (Controller2.ButtonUp.pressing() && auton == 0)
-    {
+    /* if (Controller2.ButtonR2.pressing()) {
       autonomous();
-    }
+    } */
 
-    if (Controller2.ButtonR1.pressing())
-    {
-      intakeGrabe();
-    }
-    else if (Controller2.ButtonL1.pressing())
-    {
-      intakeReverse();
-    }
-    else
-    {
+    if (Controller2.ButtonR1.pressing()) {
+      moveIntakeToInside();
+    } else if (Controller2.ButtonL1.pressing()) {
+      moveIntakeToOutside();
+    } else {
       stopIntake();
     }
 
-    if (Controller2.ButtonB.pressing())
-    {
+    if (Controller2.ButtonB.pressing()) {
       switch_control_direction(&controllerStartTimer);
     }
+
+    Controller2.ButtonA.pressed([]() { pnematicWings(true); });
+    Controller2.ButtonY.pressed([]() { pnematicWings(false); });
 
     wait(20, msec);
   }
 }
 
-
-int main()
-{
+int main() {
   // Set up callbacks for autonomous and driver control periods.
   Competition.autonomous(autonomous);
   Competition.drivercontrol(usercontrol);
@@ -406,8 +399,7 @@ int main()
   pre_auton();
 
   // Prevent main from exiting with an infinite loop.
-  while (true)
-  {
+  while (true) {
     wait(100, msec);
   }
 }
@@ -430,9 +422,11 @@ void drive_to_with_gps(double x_target, double y_target) {
     return;
   }
 
-  double magnitude = sqrt(x_distance_to_drive * x_distance_to_drive + y_distance_to_drive * y_distance_to_drive);
+  double magnitude = sqrt(x_distance_to_drive * x_distance_to_drive +
+y_distance_to_drive * y_distance_to_drive);
 
-  double angle = std::asin((std::sin(M_PI / 2.0) * x_distance_to_drive) / magnitude) * 180.0 / M_PI;
+  double angle = std::asin((std::sin(M_PI / 2.0) * x_distance_to_drive) /
+magnitude) * 180.0 / M_PI;
 
   if (y_distance_to_drive < 0) {
     angle = 180 - angle;
@@ -452,18 +446,17 @@ void gps_drive_test() {
   double x_target = 1.3;
   double y_target = 0.5;
 
-  while (gps_sensor.xPosition(mm) != x_target || gps_sensor.yPosition(mm) != y_target) {
-    if (gps_sensor.xPosition(mm) > x_target-0.05 || gps_sensor.xPosition(mm) < x_target+0.05) {
-      return;
+  while (gps_sensor.xPosition(mm) != x_target || gps_sensor.yPosition(mm) !=
+y_target) { if (gps_sensor.xPosition(mm) > x_target-0.05 ||
+gps_sensor.xPosition(mm) < x_target+0.05) { return;
     }
 
-    if (gps_sensor.yPosition(mm) > y_target-0.05 || gps_sensor.yPosition(mm) < y_target+0.05) {
-      return;
+    if (gps_sensor.yPosition(mm) > y_target-0.05 || gps_sensor.yPosition(mm) <
+y_target+0.05) { return;
     }
 
     drive_to_with_gps(x_target, y_target);
   }
-
 }
 */
 
@@ -479,41 +472,40 @@ void gps_drive_test() {
 /*                                                                          */
 /****************************************************************************/
 
-// unused functions ==============================================================================
+// unused functions
+// ==============================================================================
 int current_motor_angle_left = 0;
 int current_motor_angle_right = 0;
-float d = 0;
+double d = 0;
 float rw = 385 / 2;
 float wheeldiam = 101.6;
 float dtheta = 0;
 int stop = 0;
 
-struct
-{
+struct {
   int X = 0;
   int Y = 0;
   float theta = 0.0;
 } position;
 
-void track_location()
-{
+void track_location() {
   // the distance between the front center and the right and left wheel
   dtheta = 0;
 
-  // get the distance travelled by the left and right wheel by getting the change in angle then to mm
-  float dr = (rightMotorA.position(deg) - current_motor_angle_right) * (M_PI * wheeldiam) / 360;
-  float dl = (leftMotorA.position(deg) - current_motor_angle_left) * (M_PI * wheeldiam) / 360;
+  // get the distance travelled by the left and right wheel by getting the
+  // change in angle then to mm
+  float dr = (rightFrontMotor.position(deg) - current_motor_angle_right) *
+             (M_PI * wheeldiam) / 360;
+  float dl = (leftFrontMotor.position(deg) - current_motor_angle_left) *
+             (M_PI * wheeldiam) / 360;
 
   // calculating the change in the orientation of the robot
   dtheta = (dr - dl) / (2 * rw);
   // calulating the distance travelled by the entire robot
 
-  if (std::abs(dtheta) <= 0.01)
-  {
+  if (std::abs(dtheta) <= 0.01) {
     d = (dr + dl) / 2;
-  }
-  else
-  {
+  } else {
     d = 2 * (dr / dtheta + rw) * sin(dtheta / 2);
     position.theta += dtheta;
   }

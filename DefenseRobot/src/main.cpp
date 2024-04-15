@@ -52,8 +52,8 @@ motor FlywheelA = motor(PORT4, ratio18_1, false);
 motor_group Flywheel = motor_group(FlywheelA);
 motor Armmotor = motor(PORT8, ratio18_1, false);
 
-motor wingmotorL = motor(PORT11, ratio18_1, true);
-motor wingmotorR = motor(PORT7, ratio18_1, false);
+motor wingmotorL = motor(PORT11, ratio18_1, false);
+motor wingmotorR = motor(PORT5, ratio18_1, true);
 motor_group wingmotor = motor_group(wingmotorL, wingmotorR);
 
 
@@ -164,14 +164,14 @@ void wingRFunction()
   if (WingRExtended == 0)
   {
     wingmotorR.setVelocity(50, pct);
-    wingmotorR.spinFor(directionType::fwd, 100, rotationUnits::deg);
+    wingmotorR.spinFor(directionType::fwd, 90, rotationUnits::deg);
     WingRExtended = 1;
   }
 
   else if (WingRExtended == 1)
   {
     wingmotorR.setVelocity(30, pct);
-    wingmotorR.spinFor(directionType::fwd, -100, rotationUnits::deg);
+    wingmotorR.spinFor(directionType::fwd, -90, rotationUnits::deg);
     WingRExtended = 0;
     wingmotorR.setBrake(brakeType::hold);
   }
@@ -183,14 +183,14 @@ void wingLFunction()
   if (WingLExtended == 0)
   {
     wingmotorL.setVelocity(50, pct);
-    wingmotorL.spinFor(directionType::fwd, 100, rotationUnits::deg);
+    wingmotorL.spinFor(directionType::fwd, 90, rotationUnits::deg);
     WingLExtended = 1;
   }
 
   else if (WingLExtended == 1)
   {
     wingmotorL.setVelocity(30, pct);
-    wingmotorL.spinFor(directionType::fwd, -100, rotationUnits::deg);
+    wingmotorL.spinFor(directionType::fwd, -90, rotationUnits::deg);
     WingLExtended = 0;
     wingmotorL.setBrake(brakeType::hold);
   }
@@ -202,7 +202,7 @@ void wingFunction(){
 }
 
 void ButtonAwingFunction(){
-  if (reverserControl){
+  if (!reverserControl){
     wingLFunction();
   }
   else{
@@ -211,7 +211,7 @@ void ButtonAwingFunction(){
 }
 
 void ButtonYwingFunction(){
-  if (reverserControl){
+  if (!reverserControl){
     wingRFunction();
   }
   else{
@@ -367,16 +367,19 @@ void usercontrol(void)
     {
       switch_control_direction(&controllerStartTimer);
     }
-    Controller1.ButtonB.pressed([]()
-                                { armControlFunction(3.6); });
-    
-    Controller1.ButtonL1.pressed([]()
-                                { armControlFunction(2); });                            
+
     Controller1.ButtonX.pressed([]()
                                 { flywheel(100); });
-    Controller1.ButtonA.pressed([]()
-                                { ButtonAwingFunction(); });
+                                
+    Controller1.ButtonB.pressed([]()
+                                { armControlFunction(3.5); });
+    
+    Controller1.ButtonL1.pressed([]()
+                                { armControlFunction(2); });    
+
     Controller1.ButtonY.pressed([]()
+                                { ButtonAwingFunction(); });
+    Controller1.ButtonA.pressed([]()
                                 { ButtonYwingFunction(); });
 
     /*************************************************************************/
@@ -401,14 +404,14 @@ void usercontrol(void)
     /*************************************************************************/
     /*         Tracking the Motors Angle && the Heading of the Robot         */
     /*************************************************************************/
-    current_motor_angle_left = leftFrontMotor.position(deg);
+    /* current_motor_angle_left = leftFrontMotor.position(deg);
     current_motor_angle_right = rightFrontMotor.position(deg);
-    position.theta = inertial_sensor.heading() * 180 / M_PI;
+    position.theta = inertial_sensor.heading() * 180 / M_PI; */
 
     /*************************************************************************/
     /*                            Temp Code                                  */
     /*************************************************************************/
-    screen.printAt(10, 20, "RightDrivesmart: %f", rightFrontMotor.position(deg));
+    /* screen.printAt(10, 20, "RightDrivesmart: %f", rightFrontMotor.position(deg));
     screen.printAt(10, 50, "LeftDrivesmart: %f", leftFrontMotor.position(deg));
 
     if (Controller1.ButtonL2.pressing())
@@ -416,7 +419,7 @@ void usercontrol(void)
       RightDriveSmart.resetPosition();
       LeftDriveSmart.resetPosition();
       Brain.Screen.clearScreen();
-    }
+    } */
 
     /******************************* END ************************************/
     wait(20, msec); // Sleep the task to prevent wasted resources.
