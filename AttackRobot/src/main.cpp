@@ -257,40 +257,39 @@ void auton_part1(){
   wait(0.1, sec);
   moveForward(-1100, 150);
   wait(0.2, sec);
-  turn_angle_2D(-45, 70);
+  turn_angle_2D(-85, 70);
   wait(0.2, sec);
-  //get rid of opponents autonomous green balls 
-  return;
-
-
-
   //open wings
-  moveForward(-850, 150);
-  wait(0.2, sec);
-  turn_angle_2D(-45, 70);
+  moveForward(-1370, 150);
   wait(0.2, sec);
   //close wings
-  moveForward(400, 150);
-  wait(0.2, sec);
-  moveForward(-400, 150);
-  wait(0.2, sec);
-  moveForward(400, 150);
-  wait(0.2, sec);
-  turn_angle_2D(180, 70);
-
+  return;
 }
 
 void auton_part2(){
-  //starting 400 mm ideally away from the goal right part facing it directly with ideally 0. angle
-
-  //activate the intake out 
-  moveForward(400, 150);
+  //starting ideally near the 2 strip white lines at the limit with the black bar 
+  turn_angle_2D(-82, 70);
   wait(0.2, sec);
-  moveForward(-400, 150);
+  moveForward(500, 150);
   wait(0.2, sec);
-  // turn_angle_2D()
+  moveForward(-200, 150);
+  wait(0.2, sec);
+  turn_angle_2D(157, 70);
+  wait(0.2, sec);
+  return;
+  //near the goal facing the next green triball 
+  
 }
 
+void auton_part3(){
+  moveForward(750, 150);
+  wait(0.2, sec);
+  //grab ball in
+  turn_angle_2D(-145, 70);
+  wait(0.2, sec);
+  moveForward(600, 150);
+  wait(0.2, sec);
+}
 
 
 void autonomous(void) {
@@ -301,6 +300,8 @@ void autonomous(void) {
 
   //auton part 1
   auton_part1();
+  auton_part2();
+  auton_part3();
   
 
   // // new automation
