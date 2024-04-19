@@ -73,9 +73,9 @@ controller Controller2 = controller(primary);
 
 // Drivetrain
 motor leftFrontMotor = motor(PORT1, ratio18_1, false);
-motor leftBackMotor = motor(PORT11, ratio18_1, false);
+motor leftBackMotor = motor(PORT3, ratio18_1, false);
 motor rightFrontMotor = motor(PORT19, ratio18_1, true);
-motor rightBackMotor = motor(PORT14, ratio18_1, true);
+motor rightBackMotor = motor(PORT4, ratio18_1, true);
 motor_group LeftDriveSmart = motor_group(leftFrontMotor, leftBackMotor);
 motor_group RightDriveSmart = motor_group(rightFrontMotor, rightBackMotor);
 drivetrain Drivetrain = drivetrain(
@@ -100,7 +100,8 @@ motor intakeMotor = motor(PORT10, ratio18_1, false);
 /*----------------------------------------------------------------------------*/
 /*                                Global Constants                            */
 /*----------------------------------------------------------------------------*/
-const float TURN_ANGLE_MOTOR_RATIO = 5.4;
+const float TURN_ANGLE_MOTOR_RATIO = 1.05;
+const float MOVE_MOTOR_RATIO = 0.31;
 
 /*----------------------------------------------------------------------------*/
 /*                                Global Variables                            */
@@ -192,7 +193,7 @@ void moveForward(int distance_mm,
   RightDriveSmart.resetPosition();
   LeftDriveSmart.resetPosition();
 
-  double dist_deg = -mm_to_deg(distance_mm) * 0.67;  // need to be fine tuned
+  double dist_deg = -mm_to_deg(distance_mm) * MOVE_MOTOR_RATIO;  // need to be fine tuned
 
   RightDriveSmart.spinTo(dist_deg, deg, speed, rpm, false);
   LeftDriveSmart.spinTo(dist_deg, deg, speed, rpm, true);
@@ -203,7 +204,7 @@ void turn_angle_2D(int angle,
   RightDriveSmart.resetPosition();
   LeftDriveSmart.resetPosition();
 
-  double deg_angle = -angle * 2.62;
+  double deg_angle = -angle * TURN_ANGLE_MOTOR_RATIO;
   LeftDriveSmart.spinTo(deg_angle, deg, speed, rpm, false);
   RightDriveSmart.spinTo(-deg_angle, deg, speed, rpm);
 }
@@ -214,7 +215,7 @@ void turn_angle_1D(int angle,
   RightDriveSmart.resetPosition();
   LeftDriveSmart.resetPosition();
 
-  double deg_angle = -angle * 2.62;
+  double deg_angle = -angle * TURN_ANGLE_MOTOR_RATIO;
 
   if (reverse) {
     if (angle > 0) {
@@ -248,53 +249,101 @@ void auto_intake_grab(int rotations = 360, bool wait = true,
 /*                              Autonomous Task                              */
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
+
+void auton_part1(){
+
+  //starting from the limit allowed under the horizental bar, the green ball will directly in front and touching it 
+  moveForward(-100, 70);
+  wait(0.1, sec);
+  moveForward(-1100, 150);
+  wait(0.2, sec);
+  turn_angle_2D(-45, 70);
+  wait(0.2, sec);
+  //get rid of opponents autonomous green balls 
+  return;
+
+
+
+  //open wings
+  moveForward(-850, 150);
+  wait(0.2, sec);
+  turn_angle_2D(-45, 70);
+  wait(0.2, sec);
+  //close wings
+  moveForward(400, 150);
+  wait(0.2, sec);
+  moveForward(-400, 150);
+  wait(0.2, sec);
+  moveForward(400, 150);
+  wait(0.2, sec);
+  turn_angle_2D(180, 70);
+
+}
+
+void auton_part2(){
+  //starting 400 mm ideally away from the goal right part facing it directly with ideally 0. angle
+
+  //activate the intake out 
+  moveForward(400, 150);
+  wait(0.2, sec);
+  moveForward(-400, 150);
+  wait(0.2, sec);
+  // turn_angle_2D()
+}
+
+
+
 void autonomous(void) {
   vexcodeInit();
 
-  LeftDriveSmart.setStopping(brakeType::hold);
-  RightDriveSmart.setStopping(brakeType::hold);
+  // LeftDriveSmart.setStopping(brakeType::brea);
+  // RightDriveSmart.setStopping(brakeType::hold);
 
-  // new automation
-  moveForward(-700, 150);
-  wait(0.2, sec);
-  turn_angle_2D(-36, 150);
-  wait(0.2, sec);
-  moveForward(-700, 200);
-  wait(0.2, sec);
-  turn_angle_2D(-62, 150);
-  wait(0.2, sec);
-  moveForward(-100, 100);
-  wait(0.2, sec);
-  auto_intake_eject(2500, false);
-  wait(0.2, sec);
-  moveForward(400);
-  wait(0.2, sec);
+  //auton part 1
+  auton_part1();
+  
 
-  moveForward(-300, 150);
-  wait(0.2, sec);
-  turn_angle_2D(180, 100);
-  wait(0.2, sec);
-  moveForward(-400, 150);
-  wait(0.2, sec);
-  turn_angle_2D(-35);
-  wait(0.2, sec);
-  auto_intake_grab(5000, false);
-  moveForward(750, 125);
-  wait(0.2, sec);
-  moveForward(250, 40);
-  wait(0.7, sec);
-  moveForward(-100, 40);
-  wait(0.2, sec);
-  moveForward(100, 40);
-  wait(0.7, sec);
+  // // new automation
+  // moveForward(-700, 150);
+  // wait(0.2, sec);
+  // turn_angle_2D(-36, 150);
+  // wait(0.2, sec);
+  // moveForward(-700, 200);
+  // wait(0.2, sec);
+  // turn_angle_2D(-62, 150);
+  // wait(0.2, sec);
+  // moveForward(-100, 100);
+  // wait(0.2, sec);
+  // auto_intake_eject(2500, false);
+  // wait(0.2, sec);
+  // moveForward(400);
+  // wait(0.2, sec);
 
-  moveForward(-400, 150);
-  wait(0.2, sec);
-  turn_angle_2D(135, 150);
-  wait(0.2, sec);
-  moveForward(200, 150);
-  wait(0.2, sec);
-  auto_intake_eject(2500);
+  // moveForward(-300, 150);
+  // wait(0.2, sec);
+  // turn_angle_2D(180, 100);
+  // wait(0.2, sec);
+  // moveForward(-400, 150);
+  // wait(0.2, sec);
+  // turn_angle_2D(-35);
+  // wait(0.2, sec);
+  // auto_intake_grab(5000, false);
+  // moveForward(750, 125);
+  // wait(0.2, sec);
+  // moveForward(250, 40);
+  // wait(0.7, sec);
+  // moveForward(-100, 40);
+  // wait(0.2, sec);
+  // moveForward(100, 40);
+  // wait(0.7, sec);
+
+  // moveForward(-400, 150);
+  // wait(0.2, sec);
+  // turn_angle_2D(135, 150);
+  // wait(0.2, sec);
+  // moveForward(200, 150);
+  // wait(0.2, sec);
+  // auto_intake_eject(2500);
 }
 
 /*----------------------------------------------------------------------------*/
