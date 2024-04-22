@@ -372,18 +372,11 @@ void auton_part2(){
   wait(0.2, sec);
   moveForward(600, 150);
   wait(0.2, sec);
-  moveForward(-700, 150);
+  moveForward(-1000, 150);
   wait(0.2, sec);
-  // turn_angle_1D(-92, 150, true);
-  // wait(0.2, sec);
-  // moveForward(1200, 200);
-  // wait(0.2, sec);
-  // moveForward(-1300, 150);
-  // wait(0.2, sec);
-  // armControlFunction();
-  // flywheel(70);
-  // wait(0.2, sec);
-  // turn_angle_1D(45, 100);
+  armControlFunction(1.2);
+  wait(0.2, sec);
+  flywheel(150);
 }
 
 
