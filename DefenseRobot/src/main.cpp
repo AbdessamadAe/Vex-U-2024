@@ -84,8 +84,8 @@ motor ArmmotorR = motor(PORT15, ratio18_1, true);
 motor_group Armmotor = motor_group(ArmmotorL, ArmmotorR);
 
 
-motor wingmotorL = motor(PORT14, ratio18_1, true);
-motor wingmotorR = motor(PORT20, ratio18_1, false);
+motor wingmotorL = motor(PORT14, ratio18_1, false);
+motor wingmotorR = motor(PORT20, ratio18_1, true);
 motor_group wingmotor = motor_group(wingmotorL, wingmotorR);
 
 
@@ -266,6 +266,9 @@ void moveForward(int distance_mm,
   RightDriveSmart.resetPosition();
   LeftDriveSmart.resetPosition();
 
+  RightDriveSmart.setTimeout(2, sec);
+  LeftDriveSmart.setTimeout(2, sec);
+
   double dist_deg = - mm_to_deg(distance_mm);
 
   RightDriveSmart.spinTo(dist_deg, deg, speed, rpm, false);
@@ -361,7 +364,15 @@ void auton_part2(){
   wait(0.2, sec);
   turn_angle_2D(-35, 150);
   wait(0.2, sec);
-  moveForward(-350, 150);
+  moveForward(-550, 100);
+  wait(0.2, sec);
+  moveForward(100, 100);
+  wait(0.2, sec);
+  turn_angle_2D(93, 70);
+  wait(0.2, sec);
+  moveForward(600, 150);
+  wait(0.2, sec);
+  moveForward(-700, 150);
   wait(0.2, sec);
   // turn_angle_1D(-92, 150, true);
   // wait(0.2, sec);
