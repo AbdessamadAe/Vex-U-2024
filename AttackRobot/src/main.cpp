@@ -173,8 +173,8 @@ void pre_auton(void) {
   // Initializing Robot Configuration. DO NOT REMOVE!
   vexcodeInit();
 
-  LeftDriveSmart.setStopping(brakeType::hold);
-  RightDriveSmart.setStopping(brakeType::hold);
+  LeftDriveSmart.setStopping(brakeType::coast);
+  RightDriveSmart.setStopping(brakeType::coast);
 
   // All activities that occur before the competition starts
   // Example: clearing encoders, setting servo positions, ...
@@ -192,6 +192,9 @@ void moveForward(int distance_mm,
                  int speed = robot_specs::kMaxDrivetrainVelocityInRPM) {
   RightDriveSmart.resetPosition();
   LeftDriveSmart.resetPosition();
+
+  RightDriveSmart.setTimeout(3, sec);
+  LeftDriveSmart.setTimeout(3, sec);
 
   double dist_deg = -mm_to_deg(distance_mm) * MOVE_MOTOR_RATIO;  // need to be fine tuned
 
@@ -235,13 +238,13 @@ void turn_angle_1D(int angle,
 void auto_intake_eject(int rotations = 360, bool wait = true,
                        int speed = robot_specs::kMaxIntakeVelocityInRPM) {
   intakeMotor.resetPosition();
-  intakeMotor.spinTo(-rotations, deg, speed, rpm, wait);
+  intakeMotor.spinTo(rotations, deg, speed, rpm, wait);
 }
 
 void auto_intake_grab(int rotations = 360, bool wait = true,
                       int speed = robot_specs::kMaxIntakeVelocityInRPM) {
   intakeMotor.resetPosition();
-  intakeMotor.spinTo(rotations, deg, speed, rpm, wait);
+  intakeMotor.spinTo(-rotations, deg, speed, rpm, wait);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -253,11 +256,12 @@ void auto_intake_grab(int rotations = 360, bool wait = true,
 void auton_part1(){
 
   //starting from the limit allowed under the horizental bar, the green ball will directly in front and touching it 
+  // auto_intake_grab(5000, false, 170);
   moveForward(-100, 70);
   wait(0.1, sec);
-  moveForward(-1100, 150);
+  moveForward(-1200, 150);
   wait(0.2, sec);
-  turn_angle_2D(-85, 70);
+  turn_angle_2D(-117, 70);
   wait(0.2, sec);
   //open wings
   moveForward(-1370, 150);
@@ -270,8 +274,17 @@ void auton_part2(){
   //starting ideally near the 2 strip white lines at the limit with the black bar 
   turn_angle_2D(-82, 70);
   wait(0.2, sec);
-  moveForward(500, 150);
+  moveForward(200, 150);
   wait(0.2, sec);
+  auto_intake_eject(600, true, 200);
+  wait(0.2, sec);
+  moveForward(-400, 150);
+  wait(0.2, sec);
+  auto_intake_eject(600, true, 200);
+  wait(0.2, sec);
+  moveForward(500, 200);
+  wait(0.2, sec);
+
   moveForward(-200, 150);
   wait(0.2, sec);
   turn_angle_2D(157, 70);
@@ -285,10 +298,23 @@ void auton_part3(){
   moveForward(750, 150);
   wait(0.2, sec);
   //grab ball in
-  turn_angle_2D(-145, 70);
+  auto_intake_grab(1200, false, 200);
   wait(0.2, sec);
-  moveForward(600, 150);
+  moveForward(50, 70);
+  wait(1, sec);
+  turn_angle_2D(-165, 70);
   wait(0.2, sec);
+  auto_intake_eject(1500, false, 200);
+  moveForward(680, 150);
+  wait(0.2, sec);
+  auto_intake_eject(1500, true, 200);
+  wait(0.2, sec);
+  moveForward(-200, 150);
+  wait(0.2, sec);
+  turn_angle_2D(-10, 70);
+  wait(0.2, sec);
+  moveForward(300, 200);
+  
 }
 
 
@@ -303,70 +329,29 @@ void autonomous(void) {
   auton_part2();
   auton_part3();
   
-
-  // // new automation
-  // moveForward(-700, 150);
-  // wait(0.2, sec);
-  // turn_angle_2D(-36, 150);
-  // wait(0.2, sec);
-  // moveForward(-700, 200);
-  // wait(0.2, sec);
-  // turn_angle_2D(-62, 150);
-  // wait(0.2, sec);
-  // moveForward(-100, 100);
-  // wait(0.2, sec);
-  // auto_intake_eject(2500, false);
-  // wait(0.2, sec);
-  // moveForward(400);
-  // wait(0.2, sec);
-
-  // moveForward(-300, 150);
-  // wait(0.2, sec);
-  // turn_angle_2D(180, 100);
-  // wait(0.2, sec);
-  // moveForward(-400, 150);
-  // wait(0.2, sec);
-  // turn_angle_2D(-35);
-  // wait(0.2, sec);
-  // auto_intake_grab(5000, false);
-  // moveForward(750, 125);
-  // wait(0.2, sec);
-  // moveForward(250, 40);
-  // wait(0.7, sec);
-  // moveForward(-100, 40);
-  // wait(0.2, sec);
-  // moveForward(100, 40);
-  // wait(0.7, sec);
-
-  // moveForward(-400, 150);
-  // wait(0.2, sec);
-  // turn_angle_2D(135, 150);
-  // wait(0.2, sec);
-  // moveForward(200, 150);
-  // wait(0.2, sec);
-  // auto_intake_eject(2500);
 }
 
 /*----------------------------------------------------------------------------*/
 /*                    Drive Control Specific Functions                        */
 /*----------------------------------------------------------------------------*/
 double get_speed_direction(const char *side) {
+  double horiz_nerf = 0.8;
   if (reverserControl) {
     if (strcmp(side, "right")) {
-      return Controller2.Axis3.position(pct) - Controller2.Axis1.position(pct);
+      return Controller2.Axis3.position(pct) - Controller2.Axis1.position(pct)*horiz_nerf;
     }
 
     if (strcmp(side, "left")) {
-      return Controller2.Axis3.position(pct) + Controller2.Axis1.position(pct);
+      return Controller2.Axis3.position(pct) + Controller2.Axis1.position(pct)*horiz_nerf;
     }
   }
 
   if (strcmp(side, "right")) {
-    return -Controller2.Axis3.position(pct) - Controller2.Axis1.position(pct);
+    return -Controller2.Axis3.position(pct) - Controller2.Axis1.position(pct)*horiz_nerf;
   }
 
   if (strcmp(side, "left")) {
-    return -Controller2.Axis3.position(pct) + Controller2.Axis1.position(pct);
+    return -Controller2.Axis3.position(pct) + Controller2.Axis1.position(pct)*horiz_nerf;
   }
 
   return 0;
@@ -417,9 +402,9 @@ void usercontrol(void) {
 
     // Controller2.ButtonA.pressed([]() { wingsFunction(); });
 
-    /* if (Controller2.ButtonR2.pressing()) {
+    if (Controller2.ButtonUp.pressing()) {
       autonomous();
-    } */
+    }
 
     if (Controller2.ButtonR1.pressing()) {
       moveIntakeToInside();
