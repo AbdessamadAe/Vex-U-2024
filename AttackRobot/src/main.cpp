@@ -313,7 +313,7 @@ void auton_part3(){
   wait(0.2, sec);
   turn_angle_2D(-10, 70);
   wait(0.2, sec);
-  moveForward(300, 200);
+  moveForward(400, 200);
   
 }
 
