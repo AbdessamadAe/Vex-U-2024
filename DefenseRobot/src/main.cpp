@@ -169,10 +169,8 @@ void armControlFunction(double i)
   else if (armUp == 1)
   {
     Armmotor.setTimeout(1000, msec);
-    Armmotor.spinFor(directionType::fwd, -i * 360, rotationUnits::deg);
+    Armmotor.spinFor(directionType::fwd, -i * 0.95 * 360, rotationUnits::deg);
     armUp = 0;
-    ArmmotorL.setBrake(brakeType::hold);
-    ArmmotorR.setBrake(brakeType::hold);
   }
 }
 
@@ -238,7 +236,7 @@ void wingFunction(){
 }
 
 void ButtonAwingFunction(){
-  if (!reverserControl){
+  if (reverserControl){
     wingLFunction();
   }
   else{
@@ -247,13 +245,14 @@ void ButtonAwingFunction(){
 }
 
 void ButtonYwingFunction(){
-  if (!reverserControl){
+  if (reverserControl){
     wingRFunction();
   }
   else{
     wingLFunction();
   }
 }
+
 
 //mm to degrees
 double mm_to_deg(int distance_mm) {
@@ -404,8 +403,8 @@ void usercontrol(void)
   Drivetrain.setDriveVelocity(50, pct);
   Drivetrain.setTurnVelocity(25, pct);
   inertial_sensor.calibrate();
-  wingmotorL.setBrake(brakeType::hold);
-  wingmotorR.setBrake(brakeType::hold);
+  wingmotorL.setBrake(brakeType::brake);
+  wingmotorR.setBrake(brakeType::brake);
 
   while (inertial_sensor.isCalibrating())
   {
@@ -423,10 +422,10 @@ void usercontrol(void)
     /*************************************************************************/
     /*                         Quick Buttons Set Up                          */
     /*************************************************************************/
-    if (Controller1.ButtonUp.pressing() && auton == 0)
+    /* if (Controller1.ButtonUp.pressing() && auton == 0)
     {
       autonomous();
-    }
+    } */
 
     if (Controller1.ButtonR1.pressing())
     {
@@ -440,7 +439,7 @@ void usercontrol(void)
                                 { armControlFunction(1.2); });
     
     Controller1.ButtonL1.pressed([]()
-                                { armControlFunction(3.5); });    
+                                { armControlFunction(3.1); });    
 
     Controller1.ButtonY.pressed([]()
                                 { ButtonAwingFunction(); });
