@@ -60,8 +60,8 @@ const double kGPSAngleOffsetInDegree = 0;  // preferable to be at 180 degree
 
 
 // define your global instances of motors and other devices here
-motor leftFrontMotor = motor(PORT10, ratio18_1, false);
-motor leftBackMotor = motor(PORT9, ratio18_1, false);
+motor leftFrontMotor = motor(PORT17, ratio18_1, false);
+motor leftBackMotor = motor(PORT16, ratio18_1, false);
 motor_group LeftDriveSmart = motor_group(leftFrontMotor, leftBackMotor);
 motor rightFrontMotor = motor(PORT12, ratio18_1, true);
 motor rightBackMotor = motor(PORT13, ratio18_1, true);
@@ -79,8 +79,8 @@ inertial inertial_sensor = inertial(PORT16);
 
 motor FlywheelA = motor(PORT19, ratio18_1, false);
 motor_group Flywheel = motor_group(FlywheelA);
-motor ArmmotorL = motor(PORT18, ratio18_1, false);
-motor ArmmotorR = motor(PORT15, ratio18_1, true);
+motor ArmmotorL = motor(PORT18, ratio18_1, true);
+motor ArmmotorR = motor(PORT15, ratio18_1, false);
 motor_group Armmotor = motor_group(ArmmotorL, ArmmotorR);
 
 
@@ -100,7 +100,7 @@ bool RemoteControlCodeEnabled = false;
 
 // custom global variables
 double obstacle_distance = 100000;
-bool reverserControl = true;
+bool reverserControl = false;
 time_t controllerStartTimer = time(NULL);
 int current_motor_angle_left = 0;
 int current_motor_angle_right = 0;
@@ -236,7 +236,7 @@ void wingFunction(){
 }
 
 void ButtonAwingFunction(){
-  if (reverserControl){
+  if (!reverserControl){
     wingLFunction();
   }
   else{
@@ -245,7 +245,7 @@ void ButtonAwingFunction(){
 }
 
 void ButtonYwingFunction(){
-  if (reverserControl){
+  if (!reverserControl){
     wingRFunction();
   }
   else{
