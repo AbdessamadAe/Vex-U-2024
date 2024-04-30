@@ -259,7 +259,7 @@ void auton_part1(){
   // auto_intake_grab(5000, false, 170);
   moveForward(-100, 70);
   wait(0.1, sec);
-  moveForward(-1200, 150);
+  moveForward(-1250, 150);
   wait(0.2, sec);
   turn_angle_2D(-117, 70);
   wait(0.2, sec);

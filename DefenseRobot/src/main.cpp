@@ -81,12 +81,12 @@ motor FlywheelA = motor(PORT19, ratio18_1, false);
 motor_group Flywheel = motor_group(FlywheelA);
 motor ArmmotorL = motor(PORT18, ratio18_1, true);
 motor ArmmotorR = motor(PORT15, ratio18_1, false);
-motor_group Armmotor = motor_group(ArmmotorL, ArmmotorR);
+motor_group Armmotor = motor_group(ArmmotorR, ArmmotorL);
 
 
 motor wingmotorL = motor(PORT14, ratio18_1, false);
 motor wingmotorR = motor(PORT20, ratio18_1, true);
-motor_group wingmotor = motor_group(wingmotorL, wingmotorR);
+motor_group wingmotor = motor_group(wingmotorR, wingmotorL);
 
 
 /*---------------------------------------------------------------------------*/
@@ -156,22 +156,21 @@ void pre_auton(void)
 
 void armControlFunction(double i)
 {
-  Armmotor.setVelocity(100, pct);
-  if (armUp == 0)
-  {
-    Armmotor.spinFor(directionType::fwd, i * 360, rotationUnits::deg);
-    armUp = 1;
+  if (armUp == 1){
+    Armmotor.setVelocity(100, rpm);
+  Armmotor.setTimeout(3000, msec);
+  Armmotor.spinFor(directionType::fwd, -i * 360, rotationUnits::deg);
+  armUp = 0;
+   
+  } else {
+  Armmotor.setVelocity(100, rpm);
+  Armmotor.setTimeout(3000, msec);
+  Armmotor.spinFor(directionType::fwd, i * 360, rotationUnits::deg);
     ArmmotorL.setBrake(brakeType::hold);
     ArmmotorR.setBrake(brakeType::hold);
-
-  }
-
-  else if (armUp == 1)
-  {
-    Armmotor.setTimeout(1000, msec);
-    Armmotor.spinFor(directionType::fwd, -i * 0.95 * 360, rotationUnits::deg);
-    armUp = 0;
-  }
+    armUp = 1;
+    }
+    
 }
 
 void flywheel(int speed)
@@ -195,16 +194,16 @@ void wingRFunction()
   
   if (WingRExtended == 0)
   {
-    wingmotorR.setVelocity(50, pct);
-    wingmotorR.spinFor(directionType::fwd, 90, rotationUnits::deg);
+    wingmotorR.setVelocity(80, pct);
+    wingmotorR.spinFor(directionType::fwd, 180, rotationUnits::deg);
     WingRExtended = 1;
     wingmotorR.setBrake(brakeType::hold);
   }
 
   else if (WingRExtended == 1)
   {
-    wingmotorR.setVelocity(30, pct);
-    wingmotorR.spinFor(directionType::fwd, -90, rotationUnits::deg);
+    wingmotorR.setVelocity(60, pct);
+    wingmotorR.spinFor(directionType::fwd, -180, rotationUnits::deg);
     WingRExtended = 0;
     wingmotorR.setBrake(brakeType::hold);
   }
@@ -268,7 +267,7 @@ void moveForward(int distance_mm,
   RightDriveSmart.setTimeout(2, sec);
   LeftDriveSmart.setTimeout(2, sec);
 
-  double dist_deg = - mm_to_deg(distance_mm);
+  double dist_deg = mm_to_deg(distance_mm);
 
   RightDriveSmart.spinTo(dist_deg, deg, speed, rpm, false);
   LeftDriveSmart.spinTo(dist_deg, deg, speed, rpm, true);
@@ -373,9 +372,9 @@ void auton_part2(){
   wait(0.2, sec);
   moveForward(-1000, 150);
   wait(0.2, sec);
-  armControlFunction(1.2);
+  /* armControlFunction(1.2);
   wait(0.2, sec);
-  flywheel(150);
+  flywheel(150); */
 }
 
 
@@ -427,23 +426,23 @@ void usercontrol(void)
       autonomous();
     } */
 
-    if (Controller1.ButtonR1.pressing())
+    if (Controller1.ButtonR2.pressing())
     {
       switch_control_direction(&controllerStartTimer);
     }
 
-    Controller1.ButtonR2.pressed([]()
-                                { flywheel(100); });
+    /* Controller1.ButtonR2.pressed([]()
+                                { flywheel(100); }); */
                                 
-    Controller1.ButtonB.pressed([]()
-                                { armControlFunction(1.2); });
+    /* Controller1.ButtonB.pressed([]()
+                                { armControlFunction(1.2); }); */
     
-    Controller1.ButtonL1.pressed([]()
-                                { armControlFunction(3.1); });    
+    Controller1.ButtonB.pressed([]()
+                                { armControlFunction(3.5); });   
 
-    Controller1.ButtonY.pressed([]()
+    Controller1.ButtonL1.pressed([]()
                                 { ButtonAwingFunction(); });
-    Controller1.ButtonA.pressed([]()
+    Controller1.ButtonR1.pressed([]()
                                 { ButtonYwingFunction(); });
 
     /*************************************************************************/
